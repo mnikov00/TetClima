@@ -1,0 +1,109 @@
+Strappi products specs:
+
+1. type → Enumeration
+
+Values:
+
+Инверторни
+Подови
+Касетъчни
+Мултисплит
+Канални
+Колонни
+Преносими
+
+2. brand   Relation
+3. model   Text
+4. image   Media
+5. price   Number
+6. efficiency    Text
+7. badge   Text (Optional) //Right left corner on the image
+8. description   Text
+
+9. Specifications (Component)
+1.power	Text
+2.color	Text
+3.origin	Text
+4.coolingPower	Text
+5.heatingPower	Text
+6.noiseLevel	Text
+7.refrigerant	Text
+8.dimensions	Text
+9.weight	Text
+
+
+
+-------------------------------------------------------------------------------
+
+
+[
+  {
+    "id": "pfzfw958prqudqedrlcul96j",
+    "numericId": 5,
+    "name": "S21 Ultra",
+    "brand": "Samsung",
+    "model": "S21 Ultra",
+    "image": "http://localhost:1337/uploads/samsung_ac035rnmdkgeu_duct_type_medium_pressure_inverter_air_conditioner_6d4463842e.webp",
+    "price": 2100,
+    "capacity": "90500 BTU",
+    "efficiency": "A",
+    "type": "Касетъчни",
+    "features": [],
+    "badge": "Икономия",
+    "specifications": {
+      "class": "Касетъчни",
+      "power": "90500 BTU",
+      "color": "Бял",
+      "origin": "Китай",
+      "coolingPower": "4.0 kW",
+      "heatingPower": "4.5 kW",
+      "energyClass": "A",
+      "noiseLevel": "5.5 dB",
+      "refrigerant": "45 rV",
+      "dimensions": "500 x 300 x 55 мм",
+      "weight": "95 кг"
+    },
+    "description": "Икономичен климатик"
+  },
+  {
+    "id": "bizh389zcj1ec6z6kq7klihb",
+    "numericId": 6,
+    "name": "S250",
+    "brand": "Fujitsu",
+    "model": "S250",
+    "image": "http://localhost:1337/uploads/set_astg30kmtc_c4e9a178_3c19_4a2d_bb23_51a6f583495b_992x558_9ec40da40c.webp",
+    "price": 3000,
+    "capacity": "10000 BTU",
+    "efficiency": "A+",
+    "type": "Инверторни",
+    "features": [],
+    "badge": "Най-популярен",
+    "specifications": {
+      "class": "Инверторни",
+      "power": "10000 BTU",
+      "color": "Бял",
+      "origin": "Япония",
+      "coolingPower": "4.2 kW",
+      "heatingPower": "5.0 kW",
+      "energyClass": "A+",
+      "noiseLevel": "19 dB",
+      "refrigerant": "R32",
+      "dimensions": "798 x 285 x 215 мм",
+      "weight": "100 кг"
+    },
+    "description": "Ефективен и доказан климатик."
+  }
+]
+
+
+"id":5,
+"documentId":"pfzfw958prqudqedrlcul96j",
+"model":"S21 Ultra",
+"price":2100,
+"efficiency":"A",
+"badge":"Икономия",
+"description":"Икономичен климатик",
+"createdAt":"2026-03-07T18:48:18.844Z",
+"updatedAt":"2026-03-07T18:48:18.844Z",
+"publishedAt":"2026-03-07T18:48:18.863Z",
+"type":"Касетъчни"
