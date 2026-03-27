@@ -1,6 +1,21 @@
 const STRAPI_URL =
   process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 
+/** Normalized fields used by filters / legacy UI; plus any keys from Strapi (snake_case, etc.). */
+export type ProductSpecifications = {
+  class: string;
+  power: string;
+  color: string;
+  origin: string;
+  coolingPower: string;
+  heatingPower: string;
+  energyClass: string;
+  noiseLevel: string;
+  refrigerant: string;
+  dimensions: string;
+  weight: string;
+} & Record<string, string | number | null | undefined>;
+
 export interface Product {
   // Strapi v5 documentId (used in URLs like /api/products/:documentId)
   id: string;
@@ -16,19 +31,7 @@ export interface Product {
   type: string;
   features: string[];
   badge?: string;
-  specifications: {
-    class: string;
-    power: string;
-    color: string;
-    origin: string;
-    coolingPower: string;
-    heatingPower: string;
-    energyClass: string;
-    noiseLevel: string;
-    refrigerant: string;
-    dimensions: string;
-    weight: string;
-  };
+  specifications: ProductSpecifications;
   description: string;
 }
 
@@ -53,8 +56,62 @@ function mapStrapiProduct(item: any): Product {
   // Strapi v5 can return fields directly on the item (no attributes),
   // so fall back to the root object when attributes is missing.
   const attributes = item.attributes || item || {};
-  // Support both "specifications" and "Specifications" (as in your JSON)
-  const specs = attributes.specifications || attributes.Specifications || {};
+  // Support both "specifications" and "Specifications" (Strapi component name)
+  const specsRaw =
+    attributes.specifications || attributes.Specifications || {};
+  const specsObj =
+    typeof specsRaw === "object" && specsRaw !== null ? { ...specsRaw } : {};
+  // Don't treat Strapi relation ids as spec fields
+  delete specsObj.id;
+  delete specsObj.documentId;
+
+  const str = (v: unknown) =>
+    v === null || v === undefined || v === "" ? "" : String(v);
+
+  // Normalized legacy keys (used by /products filters) + snake_case from Strapi kept via spread
+  const legacySpecs: Pick<
+    ProductSpecifications,
+    | "class"
+    | "power"
+    | "color"
+    | "origin"
+    | "coolingPower"
+    | "heatingPower"
+    | "energyClass"
+    | "noiseLevel"
+    | "refrigerant"
+    | "dimensions"
+    | "weight"
+  > = {
+    class: str(specsObj.class) || str(attributes.type) || "",
+    power: str(specsObj.power) || str(specsObj.power_btu) || "",
+    color: str(specsObj.color),
+    origin: str(specsObj.origin) || str(specsObj.country_of_origin),
+    coolingPower: str(specsObj.coolingPower) || str(specsObj.cooling_power),
+    heatingPower: str(specsObj.heatingPower) || str(specsObj.heating_power),
+    energyClass:
+      str(specsObj.energyClass) ||
+      str(specsObj.cooling_energy_class) ||
+      str(attributes.efficiency),
+    noiseLevel:
+      str(specsObj.noiseLevel) ||
+      str(specsObj.indoor_noise_level) ||
+      str(specsObj.outdoor_noise_level),
+    refrigerant: str(specsObj.refrigerant),
+    dimensions:
+      str(specsObj.dimensions) ||
+      str(specsObj.indoor_unit_dimensions) ||
+      str(specsObj.outdoor_unit_dimensions),
+    weight:
+      str(specsObj.weight) ||
+      str(specsObj.indoor_unit_weight) ||
+      str(specsObj.outdoor_unit_weight),
+  };
+
+  const specifications: ProductSpecifications = {
+    ...specsObj,
+    ...legacySpecs,
+  };
 
   // Support both v4-style media (image.data.attributes.url)
   // and v5-style media (image.url).
@@ -84,32 +141,18 @@ function mapStrapiProduct(item: any): Product {
     model: (attributes.model as string) || "",
     image: imageUrl,
     price: (attributes.price as number) ?? 0,
-    // Use specifications.power as capacity fallback
-    capacity: (attributes.capacity as string) || (specs.power as string) || "",
+    capacity:
+      str(attributes.capacity) ||
+      str(specsObj.power_btu) ||
+      legacySpecs.power,
     efficiency:
-      (attributes.efficiency as string) ||
-      (specs.energyClass as string) ||
-      "",
+      str(attributes.efficiency) ||
+      str(specsObj.cooling_energy_class) ||
+      legacySpecs.energyClass,
     type: valueToText(attributes.type),
     features: featuresArray,
     badge: (attributes.badge as string | undefined) || undefined,
-    specifications: {
-      class: (specs.class as string) || (attributes.type as string) || "",
-      power: (specs.power as string) || "",
-      color: (specs.color as string) || "",
-      origin: (specs.origin as string) || "",
-      coolingPower: (specs.coolingPower as string) || "",
-      heatingPower: (specs.heatingPower as string) || "",
-      // If you don't have energyClass in the component, reuse efficiency
-      energyClass:
-        (specs.energyClass as string) ||
-        (attributes.efficiency as string) ||
-        "",
-      noiseLevel: (specs.noiseLevel as string) || "",
-      refrigerant: (specs.refrigerant as string) || "",
-      dimensions: (specs.dimensions as string) || "",
-      weight: (specs.weight as string) || "",
-    },
+    specifications,
     description: (attributes.description as string) || "",
   };
 }

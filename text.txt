@@ -107,3 +107,35 @@ Values:
 "updatedAt":"2026-03-07T18:48:18.844Z",
 "publishedAt":"2026-03-07T18:48:18.863Z",
 "type":"Касетъчни"
+
+
+-----------
+
+room_size → За помещения (кв.м.)
+cooling_energy_class → Енергиен клас охлаждане
+heating_energy_class → Енергиен клас отопление
+power_btu → Мощност (BTU)
+recommended_cooling_volume → Препоръчителен обем (охлаждане) (м³)
+recommended_heating_volume → Препоръчителен обем (отопление) (м³)
+cooling_power → Отдавана мощност (охлаждане) (kW)
+heating_power → Отдавана мощност (отопление) (kW)
+power_consumption_cooling → Консумирана мощност (охлаждане) (kW)
+power_consumption_heating → Консумирана мощност (отопление) (kW)
+power_supply_voltage → Захранващо напрежение (V)
+seer → SEER (сезонна ефективност охлаждане)
+scop → SCOP (сезонна ефективност отопление)
+indoor_noise_level → Ниво на шум (вътрешно тяло) (dB)
+outdoor_noise_level → Ниво на шум (външно тяло) (dB)
+indoor_unit_dimensions → Размери вътрешно тяло (Ш x В x Д) (mm)
+outdoor_unit_dimensions → Размери външно тяло (Ш x В x Д) (mm)
+indoor_unit_weight → Тегло вътрешно тяло (kg)
+outdoor_unit_weight → Тегло външно тяло (kg)
+cooling_operating_range → Работен диапазон охлаждане (°C)
+heating_operating_range → Работен диапазон отопление (°C)
+refrigerant → Хладилен агент
+color → Цвят
+country_of_origin → Произход
+pipe_diameter → Диаметър на тръбите (течност/газ) (mm)
+max_height_difference → Денивелация (m)
+power_supply_location → Захранване
+max_pipe_length → Максимална дължина на тръбен път (m)

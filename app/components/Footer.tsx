@@ -1,6 +1,15 @@
 import Link from "next/link";
 import { Separator } from "./ui/separator";
-import { Facebook, Twitter, Linkedin, Instagram } from "lucide-react";
+import { Facebook, Instagram } from "lucide-react";
+
+const PHONE_DISPLAY = "+359 876 083 921";
+const PHONE_TEL = "+359876083921";
+const EMAIL = "tetclima3@gmail.com";
+const ADDRESS = "ул. Любляна 40Б, София, България";
+
+const FACEBOOK_URL =
+  "https://www.facebook.com/people/Tetclima/61566161110994";
+const INSTAGRAM_URL = "https://www.instagram.com/tetclima";
 
 export function Footer() {
   return (
@@ -13,10 +22,24 @@ export function Footer() {
               Водещ доставчик на професионални климатични системи с над 15 години опит в осигуряването на комфорт и енергийна ефективност.
             </p>
             <div className="flex gap-4">
-              <Facebook size={20} className="opacity-75 hover:opacity-100 cursor-pointer" />
-              <Twitter size={20} className="opacity-75 hover:opacity-100 cursor-pointer" />
-              <Linkedin size={20} className="opacity-75 hover:opacity-100 cursor-pointer" />
-              <Instagram size={20} className="opacity-75 hover:opacity-100 cursor-pointer" />
+              <a
+                href={FACEBOOK_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="opacity-75 hover:opacity-100 transition-opacity"
+                aria-label="TetClima във Facebook"
+              >
+                <Facebook size={22} />
+              </a>
+              <a
+                href={INSTAGRAM_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="opacity-75 hover:opacity-100 transition-opacity"
+                aria-label="TetClima в Instagram"
+              >
+                <Instagram size={22} />
+              </a>
             </div>
           </div>
 
@@ -45,14 +68,24 @@ export function Footer() {
           <div>
             <h4 className="font-semibold mb-4">Контакти</h4>
             <ul className="space-y-2 text-sm opacity-90">
-              <li>бул. &quot;Цариградско шосе&quot; 115</li>
-              <li>София 1784</li>
-              <li>България</li>
-              <li className="pt-2">
-                <strong>Телефон:</strong> +359 2 123 4567
+              <li>{ADDRESS}</li>
+              <li className="pt-1">
+                <strong>Телефон:</strong>{" "}
+                <a href={`tel:${PHONE_TEL}`} className="underline hover:opacity-100">
+                  {PHONE_DISPLAY}
+                </a>
               </li>
               <li>
-                <strong>Имейл:</strong> info@industrialac.com
+                <strong>Имейл:</strong>{" "}
+                <a href={`mailto:${EMAIL}`} className="underline hover:opacity-100 break-all">
+                  {EMAIL}
+                </a>
+              </li>
+              <li className="mt-2 border-t border-white/20 pt-3 text-xs leading-relaxed">
+                <strong className="block mb-1">Работно време</strong>
+                Пон.–Пет.: 9:00–19:00<br />
+                Съб.: 10:00–14:00<br />
+                Нед.: затворено
               </li>
             </ul>
           </div>
@@ -60,11 +93,14 @@ export function Footer() {
 
         <Separator className="my-8 opacity-30" />
 
-        <div className="flex flex-col md:flex-row justify-between items-center text-sm opacity-90">
-          <div>
-            &copy; 2026 TetClima. Всички права запазени.
+        <div className="flex flex-col lg:flex-row justify-between items-center gap-4 text-sm opacity-90">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-center sm:text-left">
+            <span>
+              &copy; {new Date().getFullYear()} TetClima. Всички права запазени.
+            </span>
+            <span className="text-white/75">Designed by MN</span>
           </div>
-          <div className="flex gap-6 mt-4 md:mt-0">
+          <div className="flex gap-6 flex-wrap justify-center">
             <a href="#" className="hover:opacity-100">Политика за поверителност</a>
             <a href="#" className="hover:opacity-100">Общи условия</a>
           </div>

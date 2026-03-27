@@ -34,8 +34,8 @@ export default function ContactPage() {
                 </div>
                 <h3 className="font-semibold mb-2 text-foreground">Адрес</h3>
                 <p className="text-gray-600">
-                  бул. &quot;Цариградско шосе&quot; 115<br />
-                  София 1784, България
+                  ул. Любляна 40Б<br />
+                  София, България
                 </p>
               </CardContent>
             </Card>
@@ -46,8 +46,9 @@ export default function ContactPage() {
                 </div>
                 <h3 className="font-semibold mb-2 text-foreground">Телефон</h3>
                 <p className="text-gray-600">
-                  +359 2 123 4567<br />
-                  +359 888 123 456
+                  <a href="tel:+359876083921" className="text-primary hover:underline">
+                    +359 876 083 921
+                  </a>
                 </p>
               </CardContent>
             </Card>
@@ -58,8 +59,9 @@ export default function ContactPage() {
                 </div>
                 <h3 className="font-semibold mb-2 text-foreground">Имейл</h3>
                 <p className="text-gray-600">
-                  info@industrialac.com<br />
-                  sales@industrialac.com
+                  <a href="mailto:tetclima3@gmail.com" className="text-primary hover:underline break-all">
+                    tetclima3@gmail.com
+                  </a>
                 </p>
               </CardContent>
             </Card>
@@ -110,10 +112,14 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <h3 className="text-xl font-semibold mb-2 text-foreground">Работно време</h3>
-                      <div className="space-y-1 text-gray-600">
-                        <p>Понеделник - Петък: 9:00 - 18:00</p>
-                        <p>Събота: 10:00 - 14:00</p>
-                        <p>Неделя: Почивен ден</p>
+                      <div className="space-y-2 text-gray-600 text-sm">
+                        <p><span className="font-medium text-foreground">Неделя:</span> затворено</p>
+                        <p><span className="font-medium text-foreground">Понеделник:</span> 9:00–19:00</p>
+                        <p><span className="font-medium text-foreground">Вторник:</span> 9:00–19:00</p>
+                        <p><span className="font-medium text-foreground">Сряда:</span> 9:00–19:00</p>
+                        <p><span className="font-medium text-foreground">Четвъртък:</span> 9:00–19:00</p>
+                        <p><span className="font-medium text-foreground">Петък:</span> 9:00–19:00</p>
+                        <p><span className="font-medium text-foreground">Събота:</span> 10:00–14:00</p>
                       </div>
                     </div>
                   </div>
@@ -150,7 +156,7 @@ export default function ContactPage() {
                     Нашият екип е на разположение за спешни случаи.
                   </p>
                   <Button variant="secondary" size="lg" className="w-full" asChild>
-                    <a href="tel:+359888123456">
+                    <a href="tel:+359876083921">
                       <Phone size={20} className="mr-2" />
                       Обадете се сега
                     </a>

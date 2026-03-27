@@ -16,6 +16,13 @@ import {
 } from "@/app/components/ui/select";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import { getProducts, type Product } from "@/api";
+import {
+  EUR_TO_BGN,
+  formatPriceBgnFromEur,
+  formatPriceEur,
+} from "@/lib/currency";
+
+const PAGE_SIZE = 12;
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -26,12 +33,21 @@ export default function ProductsPage() {
   const [selectedOrigins, setSelectedOrigins] = useState<string[]>([]);
   const [selectedRefrigerants, setSelectedRefrigerants] = useState<string[]>([]);
   const [selectedPowerRange, setSelectedPowerRange] = useState<string[]>([]);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(true);
+  const [page, setPage] = useState(1);
 
   const types = ["all", ...Array.from(new Set(products.map((p) => p.type)))];
-  const energyClasses = Array.from(new Set(products.map((p) => p.specifications.energyClass))).sort().reverse();
-  const origins = Array.from(new Set(products.map((p) => p.specifications.origin))).sort();
-  const refrigerants = Array.from(new Set(products.map((p) => p.specifications.refrigerant))).sort();
+  const brands = Array.from(new Set(products.map((p) => p.brand).filter(Boolean))).sort();
+  const energyClasses = Array.from(
+    new Set(products.map((p) => p.specifications.energyClass).filter(Boolean)),
+  ).sort().reverse();
+  const origins = Array.from(
+    new Set(products.map((p) => p.specifications.origin).filter(Boolean)),
+  ).sort();
+  const refrigerants = Array.from(
+    new Set(products.map((p) => p.specifications.refrigerant).filter(Boolean)),
+  ).sort();
   const powerRanges = [
     { label: "До 12000 BTU", min: 0, max: 12000 },
     { label: "12000 - 18000 BTU", min: 12000, max: 18000 },
@@ -69,6 +85,11 @@ export default function ProductsPage() {
       prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
     );
   };
+  const toggleBrand = (value: string) => {
+    setSelectedBrands((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
+    );
+  };
   const togglePowerRange = (label: string) => {
     setSelectedPowerRange((prev) =>
       prev.includes(label) ? prev.filter((v) => v !== label) : [...prev, label]
@@ -79,6 +100,7 @@ export default function ProductsPage() {
     setSelectedOrigins([]);
     setSelectedRefrigerants([]);
     setSelectedPowerRange([]);
+    setSelectedBrands([]);
     setSelectedType("all");
   };
 
@@ -86,10 +108,12 @@ export default function ProductsPage() {
     selectedEnergyClasses.length > 0 ||
     selectedOrigins.length > 0 ||
     selectedRefrigerants.length > 0 ||
-    selectedPowerRange.length > 0;
+    selectedPowerRange.length > 0 ||
+    selectedBrands.length > 0;
 
   let filteredProducts = products.filter((product) => {
     if (selectedType !== "all" && product.type !== selectedType) return false;
+    if (selectedBrands.length > 0 && !selectedBrands.includes(product.brand)) return false;
     if (selectedEnergyClasses.length > 0 && !selectedEnergyClasses.includes(product.specifications.energyClass)) return false;
     if (selectedOrigins.length > 0 && !selectedOrigins.includes(product.specifications.origin)) return false;
     if (selectedRefrigerants.length > 0 && !selectedRefrigerants.includes(product.specifications.refrigerant)) return false;
@@ -116,6 +140,28 @@ export default function ProductsPage() {
         return 0;
     }
   });
+
+  useEffect(() => {
+    setPage(1);
+  }, [
+    selectedType,
+    sortBy,
+    selectedEnergyClasses,
+    selectedOrigins,
+    selectedRefrigerants,
+    selectedPowerRange,
+    selectedBrands,
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedProducts.length / PAGE_SIZE));
+
+  useEffect(() => {
+    setPage((p) => Math.min(p, totalPages));
+  }, [totalPages]);
+
+  const safePage = Math.min(page, totalPages);
+  const start = (safePage - 1) * PAGE_SIZE;
+  const paginatedProducts = sortedProducts.slice(start, start + PAGE_SIZE);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -144,16 +190,34 @@ export default function ProductsPage() {
                     <X size={20} />
                   </button>
                 </div>
-                {hasActiveFilters && (
+                <div className="min-h-[44px] mb-4 flex items-center">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={clearAllFilters}
-                    className="w-full mb-4 text-red-600 border-red-600 hover:bg-red-50"
+                    disabled={!hasActiveFilters}
+                    className="w-full text-red-600 border-red-600 hover:bg-red-50 disabled:opacity-40 disabled:pointer-events-none"
                   >
                     Изчисти всички филтри
                   </Button>
-                )}
+                </div>
+                <div className="mb-6">
+                  <h4 className="font-medium mb-3 text-sm">Марка</h4>
+                  <div className="space-y-2">
+                    {brands.map((brand) => (
+                      <div key={brand} className="flex items-center gap-2">
+                        <Checkbox
+                          id={`brand-${brand}`}
+                          checked={selectedBrands.includes(brand)}
+                          onCheckedChange={() => toggleBrand(brand)}
+                        />
+                        <label htmlFor={`brand-${brand}`} className="text-sm cursor-pointer">
+                          {brand}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
                 <div className="mb-6">
                   <h4 className="font-medium mb-3 text-sm">Енергиен клас</h4>
                   <div className="space-y-2">
@@ -262,25 +326,30 @@ export default function ProductsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="text-sm text-gray-600 flex items-center">
+                <div className="text-sm text-gray-600 flex items-center whitespace-nowrap">
                   {sortedProducts.length} продукта
+                  {sortedProducts.length > PAGE_SIZE ? (
+                    <span className="text-gray-400 ml-2">
+                      · стр. {safePage} / {totalPages}
+                    </span>
+                  ) : null}
                 </div>
               </div>
 
               <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-8">
-                {sortedProducts.map((product) => (
+                {paginatedProducts.map((product) => (
                   <Link
                     key={product.id}
                     href={`/product/${product.id}`}
                     className="block"
                   >
-                    <Card className="group hover:shadow-xl transition-all bg-white border-2 hover:border-blue-200 cursor-pointer h-full">
+                    <Card className="group hover:shadow-xl transition-all h-full cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm hover:border-blue-300">
                       <CardHeader className="p-0">
-                        <div className="relative">
+                        <div className="relative overflow-hidden">
                           <ImageWithFallback
                             src={product.image}
                             alt={product.name}
-                            className="w-full h-48 object-cover rounded-t-lg"
+                            className="h-48 w-full object-cover"
                           />
                           {product.badge && (
                             <Badge className="absolute top-4 left-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-red-600 border-0 text-white shadow-md">
@@ -297,9 +366,14 @@ export default function ProductsPage() {
                           {product.brand} {product.model}
                         </CardTitle>
                         <p className="text-sm text-gray-600 mb-2">{product.name}</p>
-                        <p className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-red-600 bg-clip-text text-transparent mb-4">
-                          {product.price.toLocaleString()} лв.
-                        </p>
+                        <div className="mb-4">
+                          <p className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-red-600 bg-clip-text text-transparent">
+                            {formatPriceEur(product.price)}
+                          </p>
+                          <p className="text-xs text-slate-600 mt-1">
+                            ≈ {formatPriceBgnFromEur(product.price)} (1 € = {EUR_TO_BGN} лв.)
+                          </p>
+                        </div>
                         <div className="space-y-3 mb-6">
                           <div className="flex items-center gap-2">
                             <Thermometer size={16} className="text-blue-600" />
@@ -332,6 +406,44 @@ export default function ProductsPage() {
                   </Button>
                 </div>
               )}
+
+              {sortedProducts.length > PAGE_SIZE ? (
+                <div className="mt-10 flex flex-wrap items-center justify-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={safePage <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  >
+                    Предишна
+                  </Button>
+                  {totalPages <= 10 ? (
+                    Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                      <Button
+                        key={p}
+                        variant={p === safePage ? "default" : "outline"}
+                        size="sm"
+                        className={p === safePage ? "bg-blue-600" : ""}
+                        onClick={() => setPage(p)}
+                      >
+                        {p}
+                      </Button>
+                    ))
+                  ) : (
+                    <span className="text-sm text-slate-600 px-2">
+                      Страница {safePage} от {totalPages}
+                    </span>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={safePage >= totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  >
+                    Следваща
+                  </Button>
+                </div>
+              ) : null}
             </div>
           </div>
           )}

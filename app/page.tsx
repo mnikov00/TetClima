@@ -5,6 +5,11 @@ import { Badge } from "@/app/components/ui/badge";
 import { ImageWithFallback } from "@/app/components/ImageWithFallback";
 import { Thermometer, Zap, Shield, Clock, Award, Wrench } from "lucide-react";
 import { getProducts, type Product } from "@/api";
+import {
+  EUR_TO_BGN,
+  formatPriceBgnFromEur,
+  formatPriceEur,
+} from "@/lib/currency";
 
 export default async function Home() {
   const products: Product[] = await getProducts();
@@ -16,11 +21,12 @@ export default async function Home() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h1 className="text-4xl lg:text-6xl font-bold mb-6">
-                <span className="text-slate-900">Професионални </span>
-                <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-red-500 bg-clip-text text-transparent">климатични</span>
-                <span className="text-red-600"> решения</span>
+              <h1 className="text-4xl lg:text-6xl font-bold mb-4 text-slate-900 leading-tight">
+                Вашият комфорт е наша грижа
               </h1>
+              <p className="text-2xl lg:text-3xl font-semibold mb-6 w-fit max-w-full bg-gradient-to-r from-blue-600 to-red-600 bg-clip-text text-transparent">
+                Отопление и охлаждане
+              </p>
               <p className="text-xl text-slate-700 mb-8">
                 Предлагаме широка гама от високоефективни климатични системи от водещи световни производители. Качество, надеждност и енергийна ефективност.
               </p>
@@ -42,7 +48,7 @@ export default async function Home() {
                   <span className="text-sm text-slate-800">5 години гаранция</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Clock className="text-blue-600 shrink-0" size={20} />
+                  <Clock className="text-red-600 shrink-0" size={20} />
                   <span className="text-sm text-slate-800">Бърза доставка</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -51,15 +57,17 @@ export default async function Home() {
                 </div>
               </div>
             </div>
-            <div className="relative">
+            <div className="relative w-full min-h-[280px] h-[min(520px,55vh)] rounded-lg shadow-2xl overflow-hidden bg-slate-100 border border-slate-200">
               <ImageWithFallback
-                src="https://images.unsplash.com/photo-1729183672500-46c52a897de5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080"
-                alt="Климатични системи"
-                className="w-full h-[500px] object-cover rounded-lg shadow-2xl"
+                src="/homepage.png"
+                alt="Климатични системи — TetClima"
+                className="absolute inset-0 h-full w-full object-cover object-center"
+                loading="eager"
+                decoding="async"
               />
-              <div className="absolute -bottom-6 -left-6 bg-gradient-to-b from-blue-600 to-red-600 text-white p-6 rounded-lg shadow-lg">
-                <div className="text-2xl font-bold">15+</div>
-                <div className="text-sm">Години опит</div>
+              <div className="absolute bottom-5 left-5 z-10 bg-gradient-to-b from-blue-600 to-red-600 text-white px-5 py-4 rounded-lg shadow-lg">
+                <div className="text-2xl font-bold leading-none">15+</div>
+                <div className="text-sm mt-1 opacity-95">Години опит</div>
               </div>
             </div>
           </div>
@@ -83,13 +91,13 @@ export default async function Home() {
               href={`/product/${product.id}`}
               className="block"
             >
-                <Card className="group hover:shadow-xl transition-all border-2 hover:border-blue-200 cursor-pointer h-full">
+                <Card className="group hover:shadow-xl transition-all h-full cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm hover:border-blue-300">
                   <CardHeader className="p-0">
-                    <div className="relative">
+                    <div className="relative overflow-hidden">
                       <ImageWithFallback
                         src={product.image}
                         alt={product.name}
-                        className="w-full h-48 object-cover rounded-t-lg"
+                        className="h-48 w-full object-cover"
                       />
                       {product.badge && (
                         <Badge className="absolute top-4 left-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-red-600 border-0 text-white shadow-md">
@@ -106,9 +114,14 @@ export default async function Home() {
                       {product.brand} {product.model}
                     </CardTitle>
                     <p className="text-sm text-slate-600 mb-2">{product.name}</p>
-                    <p className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-red-600 bg-clip-text text-transparent mb-4">
-                      {product.price.toLocaleString()} лв.
-                    </p>
+                    <div className="mb-4">
+                      <p className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-red-600 bg-clip-text text-transparent">
+                        {formatPriceEur(product.price)}
+                      </p>
+                      <p className="text-sm text-slate-600 mt-1">
+                        ≈ {formatPriceBgnFromEur(product.price)} (1 € = {EUR_TO_BGN} лв.)
+                      </p>
+                    </div>
                     <div className="space-y-3 mb-6">
                       <div className="flex items-center gap-2">
                         <Thermometer size={16} className="text-blue-600" />
