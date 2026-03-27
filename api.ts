@@ -1,5 +1,5 @@
 const STRAPI_URL =
-  process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
+  process.env.NEXT_PUBLIC_STRAPI_URL || "https://tetclima-api.onrender.com/";
 
 /** Normalized fields used by filters / legacy UI; plus any keys from Strapi (snake_case, etc.). */
 export type ProductSpecifications = {
