@@ -61,7 +61,7 @@ export function Header() {
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-3" onClick={() => setMobileOpen(false)}>
               <Image
-                src="/logo2.png"
+                src="/logo.png"
                 alt="Logo"
                 width={50}
                 height={50}

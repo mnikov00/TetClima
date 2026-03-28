@@ -169,7 +169,7 @@ export default async function Home() {
               { icon: Clock, title: "Бърза доставка", text: "Наличност на склад и бърза доставка до вашия адрес", border: "blue" },
               { icon: Thermometer, title: "Широка гама", text: "Решения за дома, офиса и индустриални обекти", border: "red" },
             ].map((item) => (
-              <Card key={item.title} className={`border-2 hover:border-${item.border}-300 transition-colors`}>
+              <Card key={item.title} className={`border-2 border-slate-200 hover:border-${item.border}-300 transition-colors`}>
                 <CardContent className="p-6">
                   <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-4 ${item.border === "blue" ? "bg-blue-100" : "bg-red-100"}`}>
                     <item.icon className={item.border === "blue" ? "text-blue-600" : "text-red-600"} size={24} />

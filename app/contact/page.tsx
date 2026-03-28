@@ -68,7 +68,7 @@ export default function ContactPage() {
           </div>
 
           <div className="grid lg:grid-cols-2 gap-12">
-            <Card>
+            <Card className="border-solid border-slate-200">
               <CardContent className="p-8 text-foreground">
                 <h2 className="text-2xl font-bold mb-6 ">Изпратете запитване</h2>
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -104,7 +104,7 @@ export default function ContactPage() {
             </Card>
 
             <div className="space-y-8">
-              <Card>
+              <Card className="border-solid border-slate-200">
                 <CardContent className="p-8">
                   <div className="flex items-start gap-4 mb-6">
                     <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -125,12 +125,12 @@ export default function ContactPage() {
                   </div>
                   <div className="border-t pt-6">
                     <p className="text-sm text-gray-600">
-                      <strong className="text-primary">Бърза поръчка:</strong> За спешни запитвания ни се обадете на телефона. Отговаряме в рамките на 1 работен час.
+                      <strong className="text-primary">Бърза поръчка:</strong> При запитвания, моля свържете се с нас на посочения телефон. Ще ви отговорим в най-кратък срок.
                     </p>
                   </div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="border-solid border-slate-200">
                 <CardContent className="p-8">
                   <h3 className="text-xl font-semibold mb-4 text-foreground">Полезна информация</h3>
                   <div className="space-y-4 text-gray-600">
