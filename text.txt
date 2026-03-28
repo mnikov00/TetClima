@@ -139,3 +139,21 @@ pipe_diameter → Диаметър на тръбите (течност/газ) (
 max_height_difference → Денивелация (m)
 power_supply_location → Захранване
 max_pipe_length → Максимална дължина на тръбен път (m)
+
+
+
+
+-----------
+
+Changes to make:
+few changes that i want u to make: on homepage on Защо да изберете нас? section, the boxes with black border to be with #64748b, also when u howe the boxes with red icons the border to become red.
+In За нас page all the boxes borders to be #64748b as well.
+in Contact page all the boxes with black border to become #64748b.
+In products page add filter Клас, За помещения (кв.м.), Цвят, Цена (where u can adjust from lowest to higest u choose). Remove Хладилен агент filter. Also make the filters be like open dropdown menu and u can click so u close certain filter.
+In a specific product now u see for example Samsung WindFree™ Avant S2 Black and  down WindFree™ Avant S2 Black, this way they model is shown on 2 places, make the second one WindFree™ Avant S2 Black to show on specific product page Производител: (the brand) *u should be abel to click it and see prodcuts with the same brand. On products page to just show the brand instead of the model down.
+for the price remove the course that's converted by and for example if its 789 €, make it 789,00 € | 1543,15 лв. to be in the same row, the euro price can still be in blue like it is right now, make the leva price in red.
+Also fix the filters because when i click on some brand the whole filter box goes up, i just dont want it to move and be stable.
+
+
+Add products in bash:
+STRAPI_API_TOKEN=dc060e121b2be6c8ddd93f876c6dc88797ecd234520da94566bf19702987f5bd840c01da9cca06bf74af7e459bf6686f1a38b0ea3998bc8b4b4b0483f7698606a61ce9d2e94bc3a0541743a9230842f356929f338da16020f10728486348a459a5f35dc0059b1cfe22aa749cf689701c08b68b8b11620fb97239e1ade7ef664a npm run import:products

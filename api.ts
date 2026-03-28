@@ -1,5 +1,4 @@
-const STRAPI_URL =
-  process.env.NEXT_PUBLIC_STRAPI_URL || "https://tetclima-api.onrender.com/";
+const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL!;
 
 /** Normalized fields used by filters / legacy UI; plus any keys from Strapi (snake_case, etc.). */
 export type ProductSpecifications = {
@@ -19,7 +18,7 @@ export type ProductSpecifications = {
 export interface Product {
   // Strapi v5 documentId (used in URLs like /api/products/:documentId)
   id: string;
-  // Optional internal numeric id from Strapi (not used in URLs)
+  // Optional internal numeric i from Strapi (not used in URLs)
   numericId?: number;
   name: string;
   brand: string;
