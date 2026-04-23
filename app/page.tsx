@@ -6,7 +6,6 @@ import { ImageWithFallback } from "@/app/components/ImageWithFallback";
 import { Thermometer, Zap, Shield, Clock, Award, Wrench } from "lucide-react";
 import { getProducts, type Product } from "@/api";
 import {
-  EUR_TO_BGN,
   formatPriceBgnFromEur,
   formatPriceEur,
 } from "@/lib/currency";
@@ -115,12 +114,15 @@ export default async function Home() {
                     </CardTitle>
                     <p className="text-sm text-slate-600 mb-2">{product.name}</p>
                     <div className="mb-4">
-                      <p className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-red-600 bg-clip-text text-transparent">
-                        {formatPriceEur(product.price)}
-                      </p>
-                      <p className="text-sm text-slate-600 mt-1">
-                        ≈ {formatPriceBgnFromEur(product.price)} (1 € = {EUR_TO_BGN} лв.)
-                      </p>
+                      <div className="flex items-baseline gap-2 flex-wrap">
+                        <span className="text-2xl font-bold text-blue-600">
+                          {formatPriceEur(product.price)}
+                        </span>
+                        <span className="text-slate-400">|</span>
+                        <span className="text-lg font-semibold text-red-600">
+                          {formatPriceBgnFromEur(product.price)}
+                        </span>
+                      </div>
                     </div>
                     <div className="space-y-3 mb-6">
                       <div className="flex items-center gap-2">
@@ -169,7 +171,13 @@ export default async function Home() {
               { icon: Clock, title: "Бърза доставка", text: "Наличност на склад и бърза доставка до вашия адрес", border: "blue" },
               { icon: Thermometer, title: "Широка гама", text: "Решения за дома, офиса и индустриални обекти", border: "red" },
             ].map((item) => (
-              <Card key={item.title} className={`border-2 border-slate-200 hover:border-${item.border}-300 transition-colors`}>
+              <Card
+                key={item.title}
+                className={[
+                  "border-2 border-[#64748b] transition-colors",
+                  item.border === "red" ? "hover:border-red-600" : "hover:border-blue-600",
+                ].join(" ")}
+              >
                 <CardContent className="p-6">
                   <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-4 ${item.border === "blue" ? "bg-blue-100" : "bg-red-100"}`}>
                     <item.icon className={item.border === "blue" ? "text-blue-600" : "text-red-600"} size={24} />

@@ -3,13 +3,14 @@ import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { ImageWithFallback } from "@/app/components/ImageWithFallback";
-import { ArrowRight, Phone, House } from "lucide-react";
+import { ArrowRight, House } from "lucide-react";
 import { getProductById, getProducts } from "@/api";
 import {
-  EUR_TO_BGN,
   formatPriceBgnFromEur,
   formatPriceEur,
 } from "@/lib/currency";
+import { ProductInquiryButton } from "@/app/components/ProductInquiryButton";
+import { ProductGallery } from "./ProductGallery";
 
 interface ProductPageProps {
   params: Promise<{ id: string }> | { id: string };
@@ -83,49 +84,57 @@ export default async function ProductDetail({ params }: ProductPageProps) {
     .filter((p) => p.type === product.type && p.id !== product.id)
     .slice(0, 3);
 
+  const isRefurbishedProduct = Boolean(product.isRefurbished);
+  const parentListHref = isRefurbishedProduct ? "/refurbished" : "/products";
+  const parentListLabel = isRefurbishedProduct
+    ? "Рециклирани климатици"
+    : "Климатици";
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b">
-        <nav
-          aria-label="Навигация"
-          className="max-w-7xl mx-auto px-6 py-4 flex flex-wrap items-center gap-x-1 gap-y-1 text-sm"
-        >
-          <Link href="/" className="inline-flex">
-            <Button variant="ghost" size="icon" className="shrink-0 text-slate-600" aria-label="Начало">
-              <House className="size-5 text-slate-500" />
-            </Button>
-          </Link>
-          <ArrowRight className="size-4 shrink-0 text-slate-400" aria-hidden />
-          <Link href="/products">
-            <Button variant="ghost" size="sm" className="h-9 px-2 text-slate-700 font-medium">
-              Продукти
-            </Button>
-          </Link>
-          <ArrowRight className="size-4 shrink-0 text-slate-400" aria-hidden />
-          <span
-            className="h-9 inline-flex items-center max-w-[min(100%,320px)] truncate px-2 font-semibold text-slate-900"
-            title={`${product.brand} ${product.model}`}
+        <div className="mx-auto max-w-7xl min-w-0 px-6">
+          <nav
+            aria-label="Навигация"
+            className="flex flex-nowrap items-center gap-x-1 overflow-x-auto overscroll-x-contain py-4 text-sm [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]"
           >
-            {product.brand} {product.model}
-          </span>
-        </nav>
+            <Link href="/" className="inline-flex shrink-0">
+              <Button variant="ghost" size="icon" className="shrink-0 text-slate-600" aria-label="Начало">
+                <House className="size-5 text-slate-500" />
+              </Button>
+            </Link>
+            <ArrowRight className="size-4 shrink-0 text-slate-400" aria-hidden />
+            <Link href={parentListHref} className="shrink-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 max-w-none whitespace-nowrap px-2 text-slate-700 font-medium"
+              >
+                {parentListLabel}
+              </Button>
+            </Link>
+            <ArrowRight className="size-4 shrink-0 text-slate-400" aria-hidden />
+            <span className="h-9 inline-flex shrink-0 items-center whitespace-nowrap px-2 font-semibold text-slate-900">
+              {product.brand} {product.model}
+            </span>
+          </nav>
+        </div>
       </div>
 
-      <section className="py-12">
+      <section className="py-12 pb-28 lg:pb-12">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-12">
             <div>
-              <div className="relative bg-white rounded-lg p-8 shadow-lg">
-                <ImageWithFallback
-                  src={product.image}
+              <div className="relative">
+                <ProductGallery
+                  images={product.images?.length ? product.images : [product.image]}
                   alt={product.name}
-                  className="w-full object-cover rounded-lg"
                 />
-                {product.badge && (
-                  <Badge className="absolute top-12 left-12 bg-primary text-lg px-4 py-2">
+                {product.badge ? (
+                  <Badge className="absolute top-4 left-4 bg-primary text-lg px-4 py-2">
                     {product.badge}
                   </Badge>
-                )}
+                ) : null}
               </div>
             </div>
 
@@ -136,25 +145,38 @@ export default async function ProductDetail({ params }: ProductPageProps) {
               <h1 className="text-4xl font-bold mb-2 text-slate-900">
                 {product.brand} {product.model}
               </h1>
-              <p className="text-xl text-slate-600 mb-6">{product.name}</p>
+              <div className="mb-6">
+                <p className="text-xl text-slate-600">{product.name}</p>
+                <p className="text-sm text-slate-600 mt-2">
+                  Производител:{" "}
+                  <Link
+                    href={`/products?brand=${encodeURIComponent(product.brand)}`}
+                    className="font-semibold text-blue-600 hover:underline"
+                  >
+                    {product.brand}
+                  </Link>
+                </p>
+              </div>
               <div className="bg-gradient-to-br from-blue-50 to-red-50 rounded-lg p-6 mb-8 border-2 border-blue-200">
                 <p className="text-sm text-slate-600 mb-2">Цена</p>
-                <p className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-red-600 bg-clip-text text-transparent">
-                  {formatPriceEur(product.price)}
-                </p>
-                <p className="text-base text-slate-700 mt-2">
-                  ≈ {formatPriceBgnFromEur(product.price)}{" "}
-                  <span className="text-sm text-slate-500">(1 € = {EUR_TO_BGN} лв.)</span>
-                </p>
+                <div className="flex items-baseline gap-3 flex-wrap">
+                  <span className="text-4xl font-bold text-blue-600">
+                    {formatPriceEur(product.price)}
+                  </span>
+                  <span className="text-slate-400">|</span>
+                  <span className="text-2xl font-bold text-red-600">
+                    {formatPriceBgnFromEur(product.price)}
+                  </span>
+                </div>
               </div>
-              <div className="mb-8">
-                <Link href="/contact">
-                  <Button size="lg" className="w-full text-lg bg-blue-600 hover:bg-blue-700 text-white border-0">
-                    <Phone size={20} className="mr-2" />
-                    Свържете се с нас за поръчка
-                  </Button>
-                </Link>
-              </div>
+              <ProductInquiryButton
+                product={{
+                  id: product.id,
+                  name: product.name,
+                  brand: product.brand,
+                  model: product.model,
+                }}
+              />
             </div>
           </div>
 
@@ -185,25 +207,34 @@ export default async function ProductDetail({ params }: ProductPageProps) {
             <h2 className="text-3xl font-bold mb-8 text-slate-900">Подобни продукти</h2>
             <div className="grid md:grid-cols-3 gap-8">
               {related.map((rp) => (
-                <Card
+                <Link
                   key={rp.id}
-                  className="hover:shadow-xl transition-shadow bg-white border border-slate-200 text-slate-900"
+                  href={"/product/" + rp.id}
+                  className="block"
                 >
-                  <CardContent className="p-4">
-                    <ImageWithFallback src={rp.image} alt={rp.name} className="w-full h-40 object-cover rounded-lg mb-4" />
-                    <h3 className="font-semibold mb-2 text-slate-900">
-                      {rp.brand} {rp.model}
-                    </h3>
-                    <p className="text-sm text-slate-600 mb-2">{rp.name}</p>
-                    <div className="mb-4">
-                      <p className="text-xl font-bold text-blue-600">{formatPriceEur(rp.price)}</p>
-                      <p className="text-xs text-slate-600">≈ {formatPriceBgnFromEur(rp.price)}</p>
-                    </div>
-                    <Link href={"/product/" + rp.id}>
-                      <Button className="w-full" size="sm">Виж детайли</Button>
-                    </Link>
-                  </CardContent>
-                </Card>
+                  <Card className="cursor-pointer hover:shadow-xl transition-shadow bg-white border border-slate-200 text-slate-900 h-full">
+                    <CardContent className="p-4">
+                      <ImageWithFallback src={rp.image} alt={rp.name} className="w-full h-40 object-cover rounded-lg mb-4" />
+                      <h3 className="font-semibold mb-2 text-slate-900">
+                        {rp.brand} {rp.model}
+                      </h3>
+                      <p className="text-sm text-slate-600 mb-2">{rp.name}</p>
+                      <div className="mb-4">
+                        <div className="flex items-baseline gap-2 flex-wrap">
+                          <span className="text-xl font-bold text-blue-600">{formatPriceEur(rp.price)}</span>
+                          <span className="text-slate-400">|</span>
+                          <span className="text-base font-semibold text-red-600">{formatPriceBgnFromEur(rp.price)}</span>
+                        </div>
+                      </div>
+                      <Button
+                        className="w-full"
+                        size="sm"
+                      >
+                        Виж детайли
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </Link>
               ))}
             </div>
           </div>

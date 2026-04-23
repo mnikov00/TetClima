@@ -11,7 +11,37 @@ const FACEBOOK_URL =
   "https://www.facebook.com/people/Tetclima/61566161110994";
 const INSTAGRAM_URL = "https://www.instagram.com/tetclima";
 
-export function Footer() {
+async function loadNormalProductTypes(): Promise<string[]> {
+  const strapiUrl = (process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337").replace(
+    /\/$/,
+    "",
+  );
+
+  try {
+    const res = await fetch(
+      // Only normal products: isRefurbished = false OR null
+      `${strapiUrl}/api/products?fields[0]=type&filters[$or][0][isRefurbished][$eq]=false&filters[$or][1][isRefurbished][$null]=true&pagination[pageSize]=1000`,
+      { cache: "no-store" },
+    );
+    if (!res.ok) return [];
+    const json: any = await res.json();
+    const data: any[] = Array.isArray(json?.data) ? json.data : [];
+    const types = Array.from(
+      new Set(
+        data
+          .map((it) => String(it?.type ?? it?.attributes?.type ?? "").trim())
+          .filter(Boolean),
+      ),
+    ).sort((a, b) => a.localeCompare(b, "bg"));
+    return types;
+  } catch {
+    return [];
+  }
+}
+
+export async function Footer() {
+  const productTypes = await loadNormalProductTypes();
+
   return (
     <footer className="bg-gradient-to-r from-indigo-800 via-purple-700 to-red-600 text-white">
       <div className="max-w-7xl mx-auto px-6 py-12">
@@ -44,24 +74,37 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-semibold mb-4">Продукти</h4>
+            <h4 className="font-semibold mb-4">Климатици</h4>
             <ul className="space-y-2 text-sm opacity-90">
-              <li><Link href="/products" className="hover:opacity-100">Инверторни климатици</Link></li>
-              <li><Link href="/products" className="hover:opacity-100">Подови климатици</Link></li>
-              <li><Link href="/products" className="hover:opacity-100">Касетъчни климатици</Link></li>
-              <li><Link href="/products" className="hover:opacity-100">Канални климатици</Link></li>
-              <li><Link href="/products" className="hover:opacity-100">Мултисплит системи</Link></li>
+              {productTypes.length ? (
+                productTypes.map((t) => (
+                  <li key={t}>
+                    <Link
+                      href={`/products?type=${encodeURIComponent(t)}`}
+                      className="hover:opacity-100"
+                    >
+                      {t}
+                    </Link>
+                  </li>
+                ))
+              ) : (
+                <li>
+                  <Link href="/products" className="hover:opacity-100">
+                    Климатици
+                  </Link>
+                </li>
+              )}
+              <li><Link href="/refurbished" className="hover:opacity-100">Рециклирани</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-semibold mb-4">Услуги</h4>
             <ul className="space-y-2 text-sm opacity-90">
-              <li><a href="#" className="hover:opacity-100">Монтаж</a></li>
-              <li><a href="#" className="hover:opacity-100">Поддръжка</a></li>
-              <li><a href="#" className="hover:opacity-100">Сервиз</a></li>
-              <li><a href="#" className="hover:opacity-100">Консултация</a></li>
-              <li><a href="#" className="hover:opacity-100">Гаранционно обслужване</a></li>
+              <li><Link href="/services/installation" className="hover:opacity-100">Монтаж на климатици</Link></li>
+              <li><Link href="/services/maintenance" className="hover:opacity-100">Профилактика на климатици</Link></li>
+              <li><Link href="/services/repair" className="hover:opacity-100">Сервиз и ремонт на климатици</Link></li>
+              <li><Link href="/services/inspection" className="hover:opacity-100">Оглед за климатици</Link></li>
             </ul>
           </div>
 
@@ -101,8 +144,10 @@ export function Footer() {
             <span className="text-white/75">Designed by MN</span>
           </div>
           <div className="flex gap-6 flex-wrap justify-center">
-            <a href="#" className="hover:opacity-100">Политика за поверителност</a>
-            <a href="#" className="hover:opacity-100">Общи условия</a>
+            <Link href="/personal-data" className="hover:opacity-100">
+              Защита на лични данни
+            </Link>
+            <Link href="/terms" className="hover:opacity-100">Общи условия</Link>
           </div>
         </div>
       </div>

@@ -23,7 +23,10 @@ export interface Product {
   name: string;
   brand: string;
   model: string;
+  /** First product image (for cards). */
   image: string;
+  /** All product images (Strapi media multiple). */
+  images: string[];
   price: number;
   capacity: string;
   efficiency: string;
@@ -32,6 +35,7 @@ export interface Product {
   badge?: string;
   specifications: ProductSpecifications;
   description: string;
+  isRefurbished?: boolean;
 }
 
 function valueToText(value: any): string {
@@ -112,13 +116,37 @@ function mapStrapiProduct(item: any): Product {
     ...legacySpecs,
   };
 
-  // Support both v4-style media (image.data.attributes.url)
-  // and v5-style media (image.url).
-  const imageAttributes =
-    attributes.image?.data?.attributes || attributes.image || {};
-  const imageUrl = imageAttributes.url
-    ? `${STRAPI_URL}${imageAttributes.url}`
-    : "/placeholder.jpg";
+  const toFullUrl = (url: unknown) =>
+    typeof url === "string" && url
+      ? url.startsWith("http")
+        ? url
+        : `${STRAPI_URL}${url}`
+      : "";
+
+  // Support Strapi media in multiple shapes:
+  // - v5: image: [{ url }]
+  // - v5 populated: image: { data: [{ attributes: { url } } ] }
+  // - v4: image: { data: { attributes: { url } } }
+  const images: string[] = (() => {
+    const img = attributes.image;
+    if (!img) return [];
+    if (Array.isArray(img)) {
+      return img.map((m: any) => toFullUrl(m?.url)).filter(Boolean);
+    }
+    if (img?.data) {
+      if (Array.isArray(img.data)) {
+        return img.data
+          .map((d: any) => toFullUrl(d?.attributes?.url ?? d?.url))
+          .filter(Boolean);
+      }
+      return [toFullUrl(img.data?.attributes?.url ?? img.data?.url)].filter(
+        Boolean,
+      );
+    }
+    return [toFullUrl(img?.url)].filter(Boolean);
+  })();
+
+  const imageUrl = images[0] || "/placeholder.jpg";
 
   const rawFeatures = attributes.features;
   const featuresArray: string[] = Array.isArray(rawFeatures)
@@ -139,6 +167,7 @@ function mapStrapiProduct(item: any): Product {
     brand: valueToText(attributes.brand),
     model: (attributes.model as string) || "",
     image: imageUrl,
+    images: images.length ? images : [imageUrl],
     price: (attributes.price as number) ?? 0,
     capacity:
       str(attributes.capacity) ||
@@ -153,6 +182,7 @@ function mapStrapiProduct(item: any): Product {
     badge: (attributes.badge as string | undefined) || undefined,
     specifications,
     description: (attributes.description as string) || "",
+    isRefurbished: Boolean(attributes.isRefurbished),
   };
 }
 

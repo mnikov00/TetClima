@@ -23,7 +23,7 @@ export default function AboutPage() {
               </div>
             </div>
             <div className="space-y-6">
-              <Card className="border-solid border-slate-200">
+              <Card className="border border-[#64748b]">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -36,7 +36,7 @@ export default function AboutPage() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="border-solid border-slate-200">
+              <Card className="border border-[#64748b]">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -49,7 +49,7 @@ export default function AboutPage() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="border-solid border-slate-200">
+              <Card className="border border-[#64748b]">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -67,7 +67,7 @@ export default function AboutPage() {
 
           <div className="grid md:grid-cols-4 gap-8 mb-16">
             {["15+", "5000+", "50+", "24/7"].map((val, i) => (
-              <Card key={i} className="text-center border-solid border-slate-200">
+              <Card key={i} className="text-center border border-[#64748b]">
                 <CardContent className="p-6">
                   <div className="text-4xl font-bold text-primary mb-2">{val}</div>
                   <p className="text-gray-600">
@@ -81,7 +81,7 @@ export default function AboutPage() {
           <div>
             <h2 className="text-3xl font-bold mb-8 text-center">Защо да ни изберете?</h2>
             <div className="grid md:grid-cols-3 gap-8">
-              <Card className="border-solid border-slate-200">
+              <Card className="border border-[#64748b]">
                 <CardContent className="p-6">
                   <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
                     <Award className="text-primary" size={24} />
@@ -90,7 +90,7 @@ export default function AboutPage() {
                   <p className="text-gray-600">Обучени и сертифицирани от водещи производители.</p>
                 </CardContent>
               </Card>
-              <Card className="border-solid border-slate-200">
+              <Card className="border border-[#64748b]">
                 <CardContent className="p-6">
                   <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
                     <Users className="text-primary" size={24} />
@@ -99,7 +99,7 @@ export default function AboutPage() {
                   <p className="text-gray-600">Персонализирани решения за всеки проект.</p>
                 </CardContent>
               </Card>
-              <Card className="border-solid border-slate-200">
+              <Card className="border border-[#64748b]">
                 <CardContent className="p-6">
                   <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
                     <TrendingUp className="text-primary" size={24} />

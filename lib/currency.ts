@@ -7,7 +7,7 @@ export function priceEurToBgn(eur: number): number {
 
 export function formatPriceEur(eur: number): string {
   return `${eur.toLocaleString("bg-BG", {
-    minimumFractionDigits: 0,
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })} €`;
 }
