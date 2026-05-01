@@ -14,9 +14,10 @@ import { ProductGallery } from "./ProductGallery";
 
 interface ProductPageProps {
   params: Promise<{ id: string }> | { id: string };
+  searchParams?: Promise<Record<string, string | string[] | undefined>> | Record<string, string | string[] | undefined>;
 }
 
-export default async function ProductDetail({ params }: ProductPageProps) {
+export default async function ProductDetail({ params, searchParams }: ProductPageProps) {
   const { id } = await Promise.resolve(params);
   const [product, allProducts] = await Promise.all([
     getProductById(id),
@@ -39,26 +40,26 @@ export default async function ProductDetail({ params }: ProductPageProps) {
   const specificationRows = [
     { key: "class", label: "Клас" },
     { key: "room_size", label: "За помещения (кв.м.)" },
-    { key: "cooling_energy_class", label: "Енергиен клас охлаждане" },
     { key: "heating_energy_class", label: "Енергиен клас отопление" },
+    { key: "cooling_energy_class", label: "Енергиен клас охлаждане" },
     { key: "power_btu", label: "Мощност (BTU)" },
-    { key: "recommended_cooling_volume", label: "Препоръчителен обем (охлаждане) (м³)" },
-    { key: "recommended_heating_volume", label: "Препоръчителен обем (отопление) (м³)" },
-    { key: "cooling_power", label: "Отдавана мощност (охлаждане) (kW)" },
-    { key: "heating_power", label: "Отдавана мощност (отопление) (kW)" },
-    { key: "power_consumption_cooling", label: "Консумирана мощност (охлаждане) (kW)" },
-    { key: "power_consumption_heating", label: "Консумирана мощност (отопление) (kW)" },
     { key: "power_supply_voltage", label: "Захранващо напрежение (V)" },
-    { key: "seer", label: "SEER (сезонна ефективност охлаждане)" },
+    { key: "recommended_heating_volume", label: "Препоръчителен обем (отопление) (м³)" },
+    { key: "recommended_cooling_volume", label: "Препоръчителен обем (охлаждане) (м³)" },
+    { key: "heating_power", label: "Отдавана мощност (отопление) (kW)" },
+    { key: "cooling_power", label: "Отдавана мощност (охлаждане) (kW)" },
+    { key: "power_consumption_heating", label: "Консумирана мощност (отопление) (kW)" },
+    { key: "power_consumption_cooling", label: "Консумирана мощност (охлаждане) (kW)" },
     { key: "scop", label: "SCOP (сезонна ефективност отопление)" },
+    { key: "seer", label: "SEER (сезонна ефективност охлаждане)" },
     { key: "indoor_noise_level", label: "Ниво на шум (вътрешно тяло) (dB)" },
     { key: "outdoor_noise_level", label: "Ниво на шум (външно тяло) (dB)" },
     { key: "indoor_unit_dimensions", label: "Размери вътрешно тяло (Ш x В x Д) (mm)" },
     { key: "outdoor_unit_dimensions", label: "Размери външно тяло (Ш x В x Д) (mm)" },
     { key: "indoor_unit_weight", label: "Тегло вътрешно тяло (kg)" },
     { key: "outdoor_unit_weight", label: "Тегло външно тяло (kg)" },
-    { key: "cooling_operating_range", label: "Работен диапазон охлаждане (°C)" },
     { key: "heating_operating_range", label: "Работен диапазон отопление (°C)" },
+    { key: "cooling_operating_range", label: "Работен диапазон охлаждане (°C)" },
     { key: "refrigerant", label: "Хладилен агент" },
     { key: "color", label: "Цвят" },
     { key: "country_of_origin", label: "Произход" },
@@ -85,7 +86,14 @@ export default async function ProductDetail({ params }: ProductPageProps) {
     .slice(0, 3);
 
   const isRefurbishedProduct = Boolean(product.isRefurbished);
-  const parentListHref = isRefurbishedProduct ? "/refurbished" : "/products";
+  const sp = await Promise.resolve(searchParams ?? {});
+  const fromRaw = Array.isArray((sp as any).from) ? (sp as any).from[0] : (sp as any).from;
+  const from =
+    typeof fromRaw === "string" && fromRaw.startsWith("/products")
+      ? fromRaw
+      : null;
+
+  const parentListHref = from ?? (isRefurbishedProduct ? "/refurbished" : "/products");
   const parentListLabel = isRefurbishedProduct
     ? "Рециклирани климатици"
     : "Климатици";
@@ -98,13 +106,13 @@ export default async function ProductDetail({ params }: ProductPageProps) {
             aria-label="Навигация"
             className="flex flex-nowrap items-center gap-x-1 overflow-x-auto overscroll-x-contain py-4 text-sm [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]"
           >
-            <Link href="/" className="inline-flex shrink-0">
+            <Link href="/" className="inline-flex shrink-0 cursor-pointer">
               <Button variant="ghost" size="icon" className="shrink-0 text-slate-600" aria-label="Начало">
                 <House className="size-5 text-slate-500" />
               </Button>
             </Link>
             <ArrowRight className="size-4 shrink-0 text-slate-400" aria-hidden />
-            <Link href={parentListHref} className="shrink-0">
+            <Link href={parentListHref} className="shrink-0 cursor-pointer">
               <Button
                 variant="ghost"
                 size="sm"
@@ -151,7 +159,7 @@ export default async function ProductDetail({ params }: ProductPageProps) {
                   Производител:{" "}
                   <Link
                     href={`/products?brand=${encodeURIComponent(product.brand)}`}
-                    className="font-semibold text-blue-600 hover:underline"
+                    className="cursor-pointer font-semibold text-blue-600 hover:underline"
                   >
                     {product.brand}
                   </Link>
@@ -168,6 +176,9 @@ export default async function ProductDetail({ params }: ProductPageProps) {
                     {formatPriceBgnFromEur(product.price)}
                   </span>
                 </div>
+                <p className="mt-3 text-sm font-semibold text-emerald-700">
+                  (С включен монтаж)
+                </p>
               </div>
               <ProductInquiryButton
                 product={{
@@ -210,11 +221,17 @@ export default async function ProductDetail({ params }: ProductPageProps) {
                 <Link
                   key={rp.id}
                   href={"/product/" + rp.id}
-                  className="block"
+                  className="block cursor-pointer"
                 >
                   <Card className="cursor-pointer hover:shadow-xl transition-shadow bg-white border border-slate-200 text-slate-900 h-full">
                     <CardContent className="p-4">
-                      <ImageWithFallback src={rp.image} alt={rp.name} className="w-full h-40 object-cover rounded-lg mb-4" />
+                      <div className="mb-4 flex h-40 w-full items-center justify-center overflow-hidden rounded-lg bg-white">
+                        <ImageWithFallback
+                          src={rp.image}
+                          alt={rp.name}
+                          className="h-full w-full max-h-full max-w-full object-contain"
+                        />
+                      </div>
                       <h3 className="font-semibold mb-2 text-slate-900">
                         {rp.brand} {rp.model}
                       </h3>

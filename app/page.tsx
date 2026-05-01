@@ -30,12 +30,12 @@ export default async function Home() {
                 Предлагаме широка гама от високоефективни климатични системи от водещи световни производители. Качество, надеждност и енергийна ефективност.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                <Link href="/products">
+                <Link href="/products" className="cursor-pointer">
                   <Button size="lg" className="text-lg px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white border-0">
                     Виж всички продукти
                   </Button>
                 </Link>
-                <Link href="/contact">
+                <Link href="/contact" className="cursor-pointer">
                   <Button size="lg" className="text-lg px-8 py-4 border-2 border-red-600 text-red-600 bg-white hover:bg-red-50">
                     Свържете се с нас
                   </Button>
@@ -88,15 +88,15 @@ export default async function Home() {
             <Link
               key={product.id}
               href={`/product/${product.id}`}
-              className="block"
+              className="block cursor-pointer"
             >
                 <Card className="group hover:shadow-xl transition-all h-full cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm hover:border-blue-300">
                   <CardHeader className="p-0">
-                    <div className="relative overflow-hidden">
+                    <div className="relative flex h-48 w-full items-center justify-center overflow-hidden bg-white">
                       <ImageWithFallback
                         src={product.image}
                         alt={product.name}
-                        className="h-48 w-full object-cover"
+                        className="h-full w-full max-h-full max-w-full object-contain"
                       />
                       {product.badge && (
                         <Badge className="absolute top-4 left-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-red-600 border-0 text-white shadow-md">
@@ -134,7 +134,7 @@ export default async function Home() {
                         <span className="text-sm text-slate-700">Клас: {product.efficiency}</span>
                       </div>
                     </div>
-                    <Button className="cursor-pointer w-full bg-blue-600 hover:bg-blue-700 text-white border-0">
+                    <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white border-0">
                       Виж детайли
                     </Button>
                   </CardContent>
@@ -143,8 +143,8 @@ export default async function Home() {
             ))}
           </div>
           <div className="text-center">
-            <Link href="/products">
-              <Button size="lg" className="cursor-pointer text-lg px-8 border-2 border-blue-600 text-blue-600 bg-white hover:bg-blue-50">
+            <Link href="/products" className="cursor-pointer">
+              <Button size="lg" className="text-lg px-8 border-2 border-blue-600 text-blue-600 bg-white hover:bg-blue-50">
                 Виж всички продукти
               </Button>
             </Link>

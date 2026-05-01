@@ -4,6 +4,7 @@ import {
   Suspense,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type Dispatch,
   type SetStateAction,
@@ -23,7 +24,7 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import { Checkbox } from "@/app/components/ui/checkbox";
-import { Input } from "@/app/components/ui/input";
+import { PriceRangeSlider } from "@/app/components/PriceRangeSlider";
 import { getProducts, type Product } from "@/api";
 import {
   formatPriceBgnFromEur,
@@ -38,12 +39,18 @@ function ProductsPageInner() {
   const searchParams = useSearchParams();
   const refurbishedOnly = searchParams.get("refurbished") === "1";
   const resetFlag = searchParams.get("reset") === "1";
+  const didInitFromUrlRef = useRef(false);
+  const returnToAfterProduct = useMemo(() => {
+    const qs = searchParams.toString();
+    return qs ? `/products?${qs}` : "/products";
+  }, [searchParams]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("popular");
   const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
   const [selectedRoomSizes, setSelectedRoomSizes] = useState<string[]>([]);
+  const [selectedBtus, setSelectedBtus] = useState<string[]>([]);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [minPriceEur, setMinPriceEur] = useState<string>("");
@@ -55,6 +62,7 @@ function ProductsPageInner() {
   const [draftType, setDraftType] = useState("");
   const [draftClasses, setDraftClasses] = useState<string[]>([]);
   const [draftRoomSizes, setDraftRoomSizes] = useState<string[]>([]);
+  const [draftBtus, setDraftBtus] = useState<string[]>([]);
   const [draftColors, setDraftColors] = useState<string[]>([]);
   const [draftBrands, setDraftBrands] = useState<string[]>([]);
   const [draftMinPriceEur, setDraftMinPriceEur] = useState("");
@@ -64,6 +72,7 @@ function ProductsPageInner() {
     brand: boolean;
     class: boolean;
     room: boolean;
+    btu: boolean;
     color: boolean;
     price: boolean;
   }>({
@@ -71,8 +80,9 @@ function ProductsPageInner() {
     brand: true,
     class: false,
     room: true,
+    btu: true,
     color: false,
-    price: false,
+    price: true,
   });
 
   const filterBase = refurbishedOnly
@@ -87,6 +97,21 @@ function ProductsPageInner() {
   const roomSizes = Array.from(
     new Set(filterBase.map((p) => String((p.specifications as any).room_size ?? "")).filter(Boolean)),
   ).sort((a, b) => a.localeCompare(b, "bg"));
+  const btus = Array.from(
+    new Set(
+      filterBase
+        .map((p) => {
+          const raw =
+            (p.specifications as any).power_btu ??
+            (p.specifications as any).power ??
+            p.capacity ??
+            "";
+          const digits = String(raw).replace(/[^\d]/g, "");
+          return digits ? digits : "";
+        })
+        .filter(Boolean),
+    ),
+  ).sort((a, b) => Number(a) - Number(b));
   const colors = Array.from(
     new Set(filterBase.map((p) => p.specifications.color).filter(Boolean)),
   ).sort((a, b) => a.localeCompare(b, "bg"));
@@ -109,47 +134,91 @@ function ProductsPageInner() {
     fetchData();
   }, []);
 
-  const brandFromQuery = useMemo(() => {
-    const raw = searchParams.get("brand");
-    return raw ? raw.trim() : "";
-  }, [searchParams]);
-
-  const typeFromQuery = useMemo(() => {
-    const raw = searchParams.get("type");
-    return raw ? raw.trim() : "";
-  }, [searchParams]);
-
-  useEffect(() => {
-    if (!brandFromQuery) return;
-    setSelectedBrands((prev) => (prev.includes(brandFromQuery) ? prev : [brandFromQuery]));
-    setOpenSections((s) => ({ ...s, brand: true }));
-  }, [brandFromQuery]);
+  const getListParam = (key: string) => {
+    const many = searchParams.getAll(key).map((v) => v.trim()).filter(Boolean);
+    if (many.length) return many;
+    const single = (searchParams.get(key) ?? "").trim();
+    if (!single) return [];
+    return single
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean);
+  };
 
   useEffect(() => {
-    if (!typeFromQuery) return;
-    setSelectedType(typeFromQuery);
-    setOpenSections((s) => ({ ...s, type: true }));
-  }, [typeFromQuery]);
+    // Init/restore state from URL (back/refresh).
+    // This is what makes filters + page "stick".
+    const urlType = (searchParams.get("type") ?? "").trim();
+    const urlSort = (searchParams.get("sort") ?? "").trim();
+    const urlPageRaw = (searchParams.get("page") ?? "").trim();
+    const urlPage = Math.max(1, Number.parseInt(urlPageRaw || "1", 10) || 1);
+
+    const urlBrands = getListParam("brand");
+    const urlClasses = getListParam("class");
+    const urlRooms = getListParam("room");
+    const urlBtus = getListParam("btu");
+    const urlColors = getListParam("color");
+
+    const urlMin = (searchParams.get("min") ?? "").trim();
+    const urlMax = (searchParams.get("max") ?? "").trim();
+
+    setSelectedType(urlType);
+    setSelectedBrands(urlBrands);
+    setSelectedClasses(urlClasses);
+    setSelectedRoomSizes(urlRooms);
+    setSelectedBtus(urlBtus);
+    setSelectedColors(urlColors);
+    setMinPriceEur(urlMin);
+    setMaxPriceEur(urlMax);
+    setPage(urlPage);
+
+    if (urlSort) setSortBy(urlSort);
+
+    if (!didInitFromUrlRef.current) {
+      didInitFromUrlRef.current = true;
+      setOpenSections((s) => ({
+        ...s,
+        type: Boolean(urlType) || s.type,
+        brand: urlBrands.length > 0 || s.brand,
+        class: urlClasses.length > 0 || s.class,
+        room: urlRooms.length > 0 || s.room,
+        btu: urlBtus.length > 0 || s.btu,
+        color: urlColors.length > 0 || s.color,
+        price: Boolean(urlMin || urlMax) || s.price,
+      }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const toggleClass = (value: string) => {
     setSelectedClasses((prev) =>
       prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
     );
+    setPage(1);
   };
   const toggleRoomSize = (value: string) => {
     setSelectedRoomSizes((prev) =>
       prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
     );
+    setPage(1);
+  };
+  const toggleBtu = (value: string) => {
+    setSelectedBtus((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
+    );
+    setPage(1);
   };
   const toggleColor = (value: string) => {
     setSelectedColors((prev) =>
       prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
     );
+    setPage(1);
   };
   const toggleBrand = (value: string) => {
     setSelectedBrands((prev) =>
       prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
     );
+    setPage(1);
   };
 
   const toggleDraftClass = (value: string) => {
@@ -159,6 +228,11 @@ function ProductsPageInner() {
   };
   const toggleDraftRoomSize = (value: string) => {
     setDraftRoomSizes((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
+    );
+  };
+  const toggleDraftBtu = (value: string) => {
+    setDraftBtus((prev) =>
       prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
     );
   };
@@ -173,19 +247,29 @@ function ProductsPageInner() {
     );
   };
 
+  const setSelectedTypeWithReset: Dispatch<SetStateAction<string>> = (next) => {
+    setSelectedType((prev) =>
+      typeof next === "function" ? (next as (p: string) => string)(prev) : next,
+    );
+    setPage(1);
+  };
+
   const clearAllFilters = () => {
     setSelectedClasses([]);
     setSelectedRoomSizes([]);
+    setSelectedBtus([]);
     setSelectedColors([]);
     setSelectedBrands([]);
     setSelectedType("");
     setMinPriceEur("");
     setMaxPriceEur("");
+    setPage(1);
   };
 
   const clearDraftFilters = () => {
     setDraftClasses([]);
     setDraftRoomSizes([]);
+    setDraftBtus([]);
     setDraftColors([]);
     setDraftBrands([]);
     setDraftType("");
@@ -203,6 +287,7 @@ function ProductsPageInner() {
     setDraftType(selectedType);
     setDraftClasses([...selectedClasses]);
     setDraftRoomSizes([...selectedRoomSizes]);
+    setDraftBtus([...selectedBtus]);
     setDraftColors([...selectedColors]);
     setDraftBrands([...selectedBrands]);
     setDraftMinPriceEur(minPriceEur);
@@ -212,6 +297,7 @@ function ProductsPageInner() {
     selectedType,
     selectedClasses,
     selectedRoomSizes,
+    selectedBtus,
     selectedColors,
     selectedBrands,
     minPriceEur,
@@ -222,6 +308,7 @@ function ProductsPageInner() {
     draftType !== selectedType ||
     !arraysEqualSorted(draftClasses, selectedClasses) ||
     !arraysEqualSorted(draftRoomSizes, selectedRoomSizes) ||
+    !arraysEqualSorted(draftBtus, selectedBtus) ||
     !arraysEqualSorted(draftColors, selectedColors) ||
     !arraysEqualSorted(draftBrands, selectedBrands) ||
     draftMinPriceEur !== minPriceEur ||
@@ -231,10 +318,12 @@ function ProductsPageInner() {
     setSelectedType(draftType);
     setSelectedClasses([...draftClasses]);
     setSelectedRoomSizes([...draftRoomSizes]);
+    setSelectedBtus([...draftBtus]);
     setSelectedColors([...draftColors]);
     setSelectedBrands([...draftBrands]);
     setMinPriceEur(draftMinPriceEur);
     setMaxPriceEur(draftMaxPriceEur);
+    setPage(1);
     setMobileFiltersOpen(false);
   };
 
@@ -242,12 +331,13 @@ function ProductsPageInner() {
     if (!resetFlag) return;
     clearAllFilters();
     // Remove reset param after clearing.
-    router.replace("/products");
+    router.replace("/products", { scroll: false });
   }, [resetFlag, router]);
 
   const hasActiveFilters =
     selectedClasses.length > 0 ||
     selectedRoomSizes.length > 0 ||
+    selectedBtus.length > 0 ||
     selectedColors.length > 0 ||
     selectedBrands.length > 0 ||
     Boolean(minPriceEur) ||
@@ -261,6 +351,13 @@ function ProductsPageInner() {
     if (selectedClasses.length > 0 && !selectedClasses.includes(product.specifications.class)) return false;
     const roomSize = String((product.specifications as any).room_size ?? "");
     if (selectedRoomSizes.length > 0 && !selectedRoomSizes.includes(roomSize)) return false;
+    const btuRaw =
+      (product.specifications as any).power_btu ??
+      (product.specifications as any).power ??
+      product.capacity ??
+      "";
+    const btuDigits = String(btuRaw).replace(/[^\d]/g, "");
+    if (selectedBtus.length > 0 && !selectedBtus.includes(btuDigits)) return false;
     if (selectedColors.length > 0 && !selectedColors.includes(product.specifications.color)) return false;
     const min = minPriceEur ? Number(minPriceEur) : undefined;
     const max = maxPriceEur ? Number(maxPriceEur) : undefined;
@@ -280,24 +377,73 @@ function ProductsPageInner() {
     }
   });
 
-  useEffect(() => {
-    setPage(1);
-  }, [
-    selectedType,
-    sortBy,
-    selectedClasses,
-    selectedRoomSizes,
-    selectedColors,
-    selectedBrands,
-    minPriceEur,
-    maxPriceEur,
-  ]);
-
   const totalPages = Math.max(1, Math.ceil(sortedProducts.length / PAGE_SIZE));
 
   useEffect(() => {
+    // Don't clamp while data is still loading, otherwise returning to ?page=2
+    // gets forced back to page 1 because totalPages is temporarily 1 (0 products).
+    if (loading) return;
+    if (products.length === 0) return;
     setPage((p) => Math.min(p, totalPages));
-  }, [totalPages]);
+  }, [loading, products.length, totalPages]);
+
+  const normalizeParams = (sp: URLSearchParams) =>
+    Array.from(sp.entries())
+      .sort(([ak, av], [bk, bv]) => (ak === bk ? av.localeCompare(bv) : ak.localeCompare(bk)))
+      .map(([k, v]) => `${k}=${v}`)
+      .join("&");
+
+  const buildAppliedQuery = () => {
+    const sp = new URLSearchParams();
+    if (refurbishedOnly) sp.set("refurbished", "1");
+    if (selectedType) sp.set("type", selectedType);
+    for (const b of selectedBrands) sp.append("brand", b);
+    for (const c of selectedClasses) sp.append("class", c);
+    for (const r of selectedRoomSizes) sp.append("room", r);
+    for (const btu of selectedBtus) sp.append("btu", btu);
+    for (const c of selectedColors) sp.append("color", c);
+    if (minPriceEur) sp.set("min", minPriceEur);
+    if (maxPriceEur) sp.set("max", maxPriceEur);
+    if (sortBy && sortBy !== "popular") sp.set("sort", sortBy);
+    if (page > 1) sp.set("page", String(page));
+    return sp;
+  };
+
+  useEffect(() => {
+    // Keep applied filters + page in URL so back/refresh restores state.
+    // Navbar reset still works via ?reset=1, so we ignore syncing while reset is present.
+    if (loading) return;
+    if (products.length === 0) return;
+    if (resetFlag) return;
+    if (!didInitFromUrlRef.current) return;
+
+    const desired = buildAppliedQuery();
+    const current = new URLSearchParams(searchParams.toString());
+    current.delete("reset");
+
+    const desiredNorm = normalizeParams(desired);
+    const currentNorm = normalizeParams(current);
+    if (desiredNorm === currentNorm) return;
+
+    const qs = desired.toString();
+    router.replace(qs ? `/products?${qs}` : "/products", { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    selectedType,
+    selectedBrands,
+    selectedClasses,
+    selectedRoomSizes,
+    selectedBtus,
+    selectedColors,
+    minPriceEur,
+    maxPriceEur,
+    sortBy,
+    page,
+    refurbishedOnly,
+    loading,
+    products.length,
+    resetFlag,
+  ]);
 
   const safePage = Math.min(page, totalPages);
   const start = (safePage - 1) * PAGE_SIZE;
@@ -309,6 +455,7 @@ function ProductsPageInner() {
     Boolean(draftType) ||
     draftClasses.length > 0 ||
     draftRoomSizes.length > 0 ||
+    draftBtus.length > 0 ||
     draftColors.length > 0 ||
     draftBrands.length > 0 ||
     Boolean(draftMinPriceEur) ||
@@ -317,66 +464,96 @@ function ProductsPageInner() {
   type FiltersPanelConfig = {
     idPrefix: string;
     showTitleRow: boolean;
+    scrollable: boolean;
     selectedType: string;
     setSelectedType: Dispatch<SetStateAction<string>>;
     selectedClasses: string[];
     toggleClassFn: (v: string) => void;
     selectedRoomSizes: string[];
     toggleRoomSizeFn: (v: string) => void;
+    selectedBtus: string[];
+    toggleBtuFn: (v: string) => void;
     selectedBrands: string[];
     toggleBrandFn: (v: string) => void;
     selectedColors: string[];
     toggleColorFn: (v: string) => void;
     minPrice: string;
-    setMinPrice: Dispatch<SetStateAction<string>>;
+    setMinPrice: (value: string) => void;
     maxPrice: string;
-    setMaxPrice: Dispatch<SetStateAction<string>>;
+    setMaxPrice: (value: string) => void;
     hasFiltersForClear: boolean;
     onClearAll: () => void;
   };
 
   const renderFiltersPanel = (cfg: FiltersPanelConfig) => (
-    <div className="bg-white rounded-lg shadow-sm p-4 lg:p-6">
-      {cfg.showTitleRow ? (
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-lg">Филтри</h3>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={cfg.onClearAll}
-            tabIndex={cfg.hasFiltersForClear ? 0 : -1}
-            aria-hidden={!cfg.hasFiltersForClear}
-            className={[
-              "text-red-600 border-red-600 hover:bg-red-50 transition-opacity",
-              cfg.hasFiltersForClear ? "opacity-100" : "opacity-0 pointer-events-none",
-            ].join(" ")}
-          >
-            Изчисти
-          </Button>
-        </div>
-      ) : (
-        <div className="flex items-center justify-end mb-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={cfg.onClearAll}
-            tabIndex={cfg.hasFiltersForClear ? 0 : -1}
-            aria-hidden={!cfg.hasFiltersForClear}
-            className={[
-              "text-red-600 border-red-600 hover:bg-red-50 transition-opacity",
-              cfg.hasFiltersForClear ? "opacity-100" : "opacity-0 pointer-events-none",
-            ].join(" ")}
-          >
-            Изчисти
-          </Button>
-        </div>
-      )}
+    <div
+      className={[
+        "bg-white rounded-lg shadow-sm overflow-hidden",
+        cfg.scrollable ? "h-full flex flex-col" : "",
+      ].join(" ")}
+    >
+      <div className="shrink-0 bg-white p-4 lg:p-6">
+        {cfg.showTitleRow ? (
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-lg">Филтри</h3>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={cfg.onClearAll}
+              tabIndex={cfg.hasFiltersForClear ? 0 : -1}
+              aria-hidden={!cfg.hasFiltersForClear}
+              className={[
+                "text-red-600 border-red-600 hover:bg-red-50 transition-opacity",
+                cfg.hasFiltersForClear ? "opacity-100" : "opacity-0 pointer-events-none",
+              ].join(" ")}
+            >
+              Изчисти
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={cfg.onClearAll}
+              tabIndex={cfg.hasFiltersForClear ? 0 : -1}
+              aria-hidden={!cfg.hasFiltersForClear}
+              className={[
+                "text-red-600 border-red-600 hover:bg-red-50 transition-opacity",
+                cfg.hasFiltersForClear ? "opacity-100" : "opacity-0 pointer-events-none",
+              ].join(" ")}
+            >
+              Изчисти
+            </Button>
+          </div>
+        )}
+      </div>
 
-      <div className="space-y-2">
+      {(() => {
+        const listBox = (len: number) =>
+          len >= 5 ? "max-h-40 overflow-auto pr-1" : "";
+        const scrollId = `${cfg.idPrefix}-filters-scroll`;
+
+        return (
+      <div
+        className={[
+          "space-y-2 px-4 lg:px-6 pb-8",
+          cfg.scrollable ? "min-h-0 flex-1 overflow-y-auto overscroll-contain" : "",
+        ].join(" ")}
+        id={scrollId}
+        // Keep page scroll and filter scroll independent.
+        // When the pointer is over the filter panel, wheel events should not scroll the page.
+        onWheel={(e) => {
+          if (!cfg.scrollable) return;
+          e.stopPropagation();
+        }}
+      >
+        {/* Keep a constant top inset while scrolling (so content doesn't touch/cut under the header). */}
+        <div className="sticky top-0 z-10 h-4 bg-white" aria-hidden />
         <div className="rounded-md border-0">
           <button
             type="button"
-            className="w-full flex items-center justify-between px-3 py-2 text-left"
+            className="flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left"
             onClick={() => setOpenSections((s) => ({ ...s, type: !s.type }))}
           >
             <span className="text-sm font-medium">Тип</span>
@@ -387,7 +564,9 @@ function ProductsPageInner() {
             )}
           </button>
           {openSections.type ? (
-            <div className="px-3 pb-3 space-y-2">
+            <div
+              className={["px-3 pb-3 space-y-2", listBox(types.length)].join(" ")}
+            >
               {types.length ? (
                 types.map((t) => (
                   <div key={t} className="flex items-start gap-2">
@@ -416,7 +595,43 @@ function ProductsPageInner() {
         <div className="rounded-md border-0">
           <button
             type="button"
-            className="w-full flex items-center justify-between px-3 py-2 text-left"
+            className="flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left"
+            onClick={() => setOpenSections((s) => ({ ...s, brand: !s.brand }))}
+          >
+            <span className="text-sm font-medium">Производител</span>
+            {openSections.brand ? (
+              <ChevronUp className="size-4 text-slate-500" />
+            ) : (
+              <ChevronDown className="size-4 text-slate-500" />
+            )}
+          </button>
+          {openSections.brand ? (
+            <div
+              className={["px-3 pb-3 space-y-2", listBox(brands.length)].join(" ")}
+            >
+              {brands.map((brand) => (
+                <div key={brand} className="flex items-start gap-2">
+                  <Checkbox
+                    id={`${cfg.idPrefix}-brand-${brand}`}
+                    checked={cfg.selectedBrands.includes(brand)}
+                    onCheckedChange={() => cfg.toggleBrandFn(brand)}
+                  />
+                  <label
+                    htmlFor={`${cfg.idPrefix}-brand-${brand}`}
+                    className="text-sm leading-5 cursor-pointer select-none"
+                  >
+                    {brand}
+                  </label>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="rounded-md border-0">
+          <button
+            type="button"
+            className="flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left"
             onClick={() => setOpenSections((s) => ({ ...s, room: !s.room }))}
           >
             <span className="text-sm font-medium">За помещения (кв.м.)</span>
@@ -427,7 +642,9 @@ function ProductsPageInner() {
             )}
           </button>
           {openSections.room ? (
-            <div className="px-3 pb-3 space-y-2">
+            <div
+              className={["px-3 pb-3 space-y-2", listBox(roomSizes.length)].join(" ")}
+            >
               {roomSizes.length ? (
                 roomSizes.map((room) => (
                   <div key={room} className="flex items-start gap-2">
@@ -454,33 +671,39 @@ function ProductsPageInner() {
         <div className="rounded-md border-0">
           <button
             type="button"
-            className="w-full flex items-center justify-between px-3 py-2 text-left"
-            onClick={() => setOpenSections((s) => ({ ...s, brand: !s.brand }))}
+            className="flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left"
+            onClick={() => setOpenSections((s) => ({ ...s, btu: !s.btu }))}
           >
-            <span className="text-sm font-medium">Производител</span>
-            {openSections.brand ? (
+            <span className="text-sm font-medium">BTU</span>
+            {openSections.btu ? (
               <ChevronUp className="size-4 text-slate-500" />
             ) : (
               <ChevronDown className="size-4 text-slate-500" />
             )}
           </button>
-          {openSections.brand ? (
-            <div className="px-3 pb-3 space-y-2 max-h-64 overflow-auto">
-              {brands.map((brand) => (
-                <div key={brand} className="flex items-start gap-2">
-                  <Checkbox
-                    id={`${cfg.idPrefix}-brand-${brand}`}
-                    checked={cfg.selectedBrands.includes(brand)}
-                    onCheckedChange={() => cfg.toggleBrandFn(brand)}
-                  />
-                  <label
-                    htmlFor={`${cfg.idPrefix}-brand-${brand}`}
-                    className="text-sm leading-5 cursor-pointer select-none"
-                  >
-                    {brand}
-                  </label>
-                </div>
-              ))}
+          {openSections.btu ? (
+            <div
+              className={["px-3 pb-3 space-y-2", listBox(btus.length)].join(" ")}
+            >
+              {btus.length ? (
+                btus.map((btu) => (
+                  <div key={btu} className="flex items-start gap-2">
+                    <Checkbox
+                      id={`${cfg.idPrefix}-btu-${btu}`}
+                      checked={cfg.selectedBtus.includes(btu)}
+                      onCheckedChange={() => cfg.toggleBtuFn(btu)}
+                    />
+                    <label
+                      htmlFor={`${cfg.idPrefix}-btu-${btu}`}
+                      className="text-sm leading-5 cursor-pointer select-none"
+                    >
+                      {btu}
+                    </label>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-slate-500">Няма данни.</p>
+              )}
             </div>
           ) : null}
         </div>
@@ -488,7 +711,7 @@ function ProductsPageInner() {
         <div className="rounded-md border-0">
           <button
             type="button"
-            className="w-full flex items-center justify-between px-3 py-2 text-left"
+            className="flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left"
             onClick={() => setOpenSections((s) => ({ ...s, class: !s.class }))}
           >
             <span className="text-sm font-medium">Клас</span>
@@ -499,7 +722,9 @@ function ProductsPageInner() {
             )}
           </button>
           {openSections.class ? (
-            <div className="px-3 pb-3 space-y-2">
+            <div
+              className={["px-3 pb-3 space-y-2", listBox(classes.length)].join(" ")}
+            >
               {classes.length ? (
                 classes.map((c) => (
                   <div key={c} className="flex items-start gap-2">
@@ -526,7 +751,7 @@ function ProductsPageInner() {
         <div className="rounded-md border-0">
           <button
             type="button"
-            className="w-full flex items-center justify-between px-3 py-2 text-left"
+            className="flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left"
             onClick={() => setOpenSections((s) => ({ ...s, color: !s.color }))}
           >
             <span className="text-sm font-medium">Цвят</span>
@@ -537,7 +762,9 @@ function ProductsPageInner() {
             )}
           </button>
           {openSections.color ? (
-            <div className="px-3 pb-3 space-y-2">
+            <div
+              className={["px-3 pb-3 space-y-2", listBox(colors.length)].join(" ")}
+            >
               {colors.length ? (
                 colors.map((color) => (
                   <div key={color} className="flex items-start gap-2">
@@ -564,10 +791,10 @@ function ProductsPageInner() {
         <div className="rounded-md border-0">
           <button
             type="button"
-            className="w-full flex items-center justify-between px-3 py-2 text-left"
+            className="flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left"
             onClick={() => setOpenSections((s) => ({ ...s, price: !s.price }))}
           >
-            <span className="text-sm font-medium">Цена (EUR)</span>
+            <span className="text-sm font-medium">Цена</span>
             {openSections.price ? (
               <ChevronUp className="size-4 text-slate-500" />
             ) : (
@@ -576,58 +803,50 @@ function ProductsPageInner() {
           </button>
           {openSections.price ? (
             <div className="px-3 pb-3">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-xs text-slate-600">От</label>
-                  <Input
-                    inputMode="decimal"
-                    placeholder={computedMin ? String(computedMin) : "0"}
-                    value={cfg.minPrice}
-                    onChange={(e) =>
-                      cfg.setMinPrice(
-                        e.target.value.replace(/[^\d.,]/g, "").replace(",", "."),
-                      )
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-slate-600">До</label>
-                  <Input
-                    inputMode="decimal"
-                    placeholder={computedMax ? String(computedMax) : "0"}
-                    value={cfg.maxPrice}
-                    onChange={(e) =>
-                      cfg.setMaxPrice(
-                        e.target.value.replace(/[^\d.,]/g, "").replace(",", "."),
-                      )
-                    }
-                  />
-                </div>
-              </div>
+              <PriceRangeSlider
+                idPrefix={`${cfg.idPrefix}-eur`}
+                minBound={computedMin}
+                maxBound={computedMax}
+                minPrice={cfg.minPrice}
+                maxPrice={cfg.maxPrice}
+                onChangeMin={cfg.setMinPrice}
+                onChangeMax={cfg.setMaxPrice}
+              />
             </div>
           ) : null}
         </div>
-      </div>
+    </div>
+    );
+      })()}
     </div>
   );
 
   const desktopFiltersPanel = renderFiltersPanel({
     idPrefix: "desk",
     showTitleRow: true,
+    scrollable: true,
     selectedType,
-    setSelectedType,
+    setSelectedType: setSelectedTypeWithReset,
     selectedClasses,
     toggleClassFn: toggleClass,
     selectedRoomSizes,
     toggleRoomSizeFn: toggleRoomSize,
+    selectedBtus,
+    toggleBtuFn: toggleBtu,
     selectedBrands,
     toggleBrandFn: toggleBrand,
     selectedColors,
     toggleColorFn: toggleColor,
     minPrice: minPriceEur,
-    setMinPrice: setMinPriceEur,
+    setMinPrice: (v) => {
+      setMinPriceEur(v);
+      setPage(1);
+    },
     maxPrice: maxPriceEur,
-    setMaxPrice: setMaxPriceEur,
+    setMaxPrice: (v) => {
+      setMaxPriceEur(v);
+      setPage(1);
+    },
     hasFiltersForClear: hasAnyFiltersApplied,
     onClearAll: clearAllFilters,
   });
@@ -635,12 +854,15 @@ function ProductsPageInner() {
   const mobileFiltersPanel = renderFiltersPanel({
     idPrefix: "mob",
     showTitleRow: false,
+    scrollable: false,
     selectedType: draftType,
     setSelectedType: setDraftType,
     selectedClasses: draftClasses,
     toggleClassFn: toggleDraftClass,
     selectedRoomSizes: draftRoomSizes,
     toggleRoomSizeFn: toggleDraftRoomSize,
+    selectedBtus: draftBtus,
+    toggleBtuFn: toggleDraftBtu,
     selectedBrands: draftBrands,
     toggleBrandFn: toggleDraftBrand,
     selectedColors: draftColors,
@@ -700,7 +922,7 @@ function ProductsPageInner() {
               <div className="fixed inset-0 z-[150] lg:hidden">
                 <button
                   type="button"
-                  className="absolute inset-0 bg-black/50"
+                  className="absolute inset-0 cursor-pointer bg-black/50"
                   aria-label="Затвори филтрите"
                   onClick={() => setMobileFiltersOpen(false)}
                 />
@@ -735,7 +957,7 @@ function ProductsPageInner() {
               </div>
             ) : null}
 
-            <aside className="lg:sticky lg:top-24 self-start hidden lg:block">
+            <aside className="lg:sticky lg:top-28 self-start hidden lg:block h-[calc(100vh-7rem)]">
               {desktopFiltersPanel}
             </aside>
 
@@ -757,7 +979,13 @@ function ProductsPageInner() {
                 </div>
                 <div className="flex items-center gap-2 flex-1">
                   <span className="text-sm text-gray-600">Сортирай по:</span>
-                  <Select value={sortBy} onValueChange={setSortBy}>
+                  <Select
+                    value={sortBy}
+                    onValueChange={(v) => {
+                      setSortBy(v);
+                      setPage(1);
+                    }}
+                  >
                     <SelectTrigger className="w-full sm:w-[200px]">
                       <SelectValue />
                     </SelectTrigger>
@@ -782,16 +1010,16 @@ function ProductsPageInner() {
                 {paginatedProducts.map((product) => (
                   <Link
                     key={product.id}
-                    href={`/product/${product.id}`}
-                    className="block"
+                    href={`/product/${product.id}?from=${encodeURIComponent(returnToAfterProduct)}`}
+                    className="block cursor-pointer"
                   >
                     <Card className="group hover:shadow-xl transition-all h-full cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm hover:border-blue-300">
                       <CardHeader className="p-0">
-                        <div className="relative overflow-hidden">
+                        <div className="relative flex h-48 w-full items-center justify-center overflow-hidden bg-white">
                           <ImageWithFallback
                             src={product.image}
                             alt={product.name}
-                            className="h-48 w-full object-cover"
+                            className="h-full w-full max-h-full max-w-full object-contain"
                           />
                           {product.badge && (
                             <Badge className="absolute top-4 left-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-red-600 border-0 text-white shadow-md">

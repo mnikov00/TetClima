@@ -8,19 +8,31 @@ import { Label } from "@/app/components/ui/label";
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
 import { useState } from "react";
 
+function isValidBgPhone(raw: string) {
+  const s = String(raw || "").trim();
+  const digits = s.replace(/[^\d]/g, "");
+  if (digits.length < 9) return false;
+  if (digits.startsWith("0")) return digits.length === 10;
+  if (digits.startsWith("359")) return digits.length === 12;
+  return digits.length >= 9 && digits.length <= 13;
+}
+
 export default function ContactPage() {
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<"idle" | "sent" | "error">("idle");
+  const [phoneError, setPhoneError] = useState<string>("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setStatus("idle");
+    setPhoneError("");
     setSubmitting(true);
 
     const form = e.currentTarget;
     const fd = new FormData(form);
     const payload = {
-      name: String(fd.get("name") || "").trim(),
+      firstName: String(fd.get("firstName") || "").trim(),
+      lastName: String(fd.get("lastName") || "").trim(),
       email: String(fd.get("email") || "").trim(),
       phone: String(fd.get("phone") || "").trim(),
       subject: String(fd.get("subject") || "").trim(),
@@ -28,6 +40,12 @@ export default function ContactPage() {
     };
 
     try {
+      if (!isValidBgPhone(payload.phone)) {
+        setPhoneError("Моля, въведете валиден телефонен номер (напр. 0888 123 456 или +359 888 123 456).");
+        setSubmitting(false);
+        return;
+      }
+
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -105,15 +123,30 @@ export default function ContactPage() {
                 <h2 className="text-2xl font-bold mb-6 ">Изпратете запитване</h2>
                 <form onSubmit={handleSubmit} className="space-y-6 max-w-full">
                   <div>
-                    <Label htmlFor="name">Име и фамилия *</Label>
-                    <Input
-                      id="name"
-                      name="name"
-                      type="text"
-                      placeholder="Вашето име"
-                      required
-                      className="mt-2 max-w-full"
-                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor="firstName">Име *</Label>
+                        <Input
+                          id="firstName"
+                          name="firstName"
+                          type="text"
+                          placeholder="Иван"
+                          required
+                          className="mt-2 max-w-full"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="lastName">Фамилия *</Label>
+                        <Input
+                          id="lastName"
+                          name="lastName"
+                          type="text"
+                          placeholder="Иванов"
+                          required
+                          className="mt-2 max-w-full"
+                        />
+                      </div>
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="email">Имейл адрес *</Label>
@@ -134,8 +167,13 @@ export default function ContactPage() {
                       type="tel"
                       placeholder="+359 ..."
                       required
+                      inputMode="tel"
+                      autoComplete="tel"
                       className="mt-2 max-w-full"
                     />
+                    {phoneError ? (
+                      <p className="mt-1 text-xs text-red-600">{phoneError}</p>
+                    ) : null}
                   </div>
                   <div>
                     <Label htmlFor="subject">Относно</Label>

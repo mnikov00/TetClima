@@ -23,12 +23,14 @@ export function ProductGallery({ images, alt }: Props) {
 
   return (
     <div>
-      <div className="relative rounded-xl overflow-hidden bg-white border border-slate-200 shadow-sm">
-        <ImageWithFallback
-          src={activeSrc}
-          alt={alt}
-          className="w-full aspect-square sm:aspect-[4/3] object-cover"
-        />
+      <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex aspect-square w-full items-center justify-center sm:aspect-4/3">
+          <ImageWithFallback
+            src={activeSrc}
+            alt={alt}
+            className="h-full w-full max-h-full max-w-full object-contain"
+          />
+        </div>
 
         {canNavigate ? (
           <>
@@ -63,7 +65,7 @@ export function ProductGallery({ images, alt }: Props) {
               key={`${src}-${idx}`}
               type="button"
               className={[
-                "shrink-0 rounded-lg overflow-hidden border",
+                "flex h-16 w-16 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border bg-white",
                 idx === active
                   ? "border-blue-500 ring-2 ring-blue-200"
                   : "border-slate-200 hover:border-slate-300",
@@ -74,7 +76,7 @@ export function ProductGallery({ images, alt }: Props) {
               <ImageWithFallback
                 src={src}
                 alt={alt}
-                className="h-16 w-16 object-cover"
+                className="max-h-full max-w-full object-contain"
               />
             </button>
           ))}

@@ -113,11 +113,11 @@ export function Header() {
       <div className="max-w-7xl mx-auto">
         <div className="hidden md:flex justify-between items-center px-6 py-2 bg-gradient-to-r from-indigo-800 via-purple-700 to-red-600 text-white text-sm">
           <div className="flex items-center gap-6">
-            <a href="tel:+359876083921" className="flex items-center gap-2 hover:underline">
+            <a href="tel:+359876083921" className="flex cursor-pointer items-center gap-2 hover:underline">
               <Phone size={14} />
               <span>+359 876 083 921</span>
             </a>
-            <a href="mailto:tetclima3@gmail.com" className="flex items-center gap-2 hover:underline">
+            <a href="mailto:tetclima3@gmail.com" className="flex cursor-pointer items-center gap-2 hover:underline">
               <Mail size={14} />
               <span>tetclima3@gmail.com</span>
             </a>
@@ -131,7 +131,7 @@ export function Header() {
 
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-3" onClick={() => setMobileOpen(false)}>
+            <Link href="/" className="flex cursor-pointer items-center gap-3" onClick={() => setMobileOpen(false)}>
               <Image
                 src="/logo.png"
                 alt="Logo"
@@ -159,7 +159,7 @@ export function Header() {
                   >
                     <Link
                       href="/products"
-                      className={cn("inline-flex items-center gap-1 text-slate-800 transition-colors font-medium", hover)}
+                      className={cn("inline-flex cursor-pointer items-center gap-1 text-slate-800 transition-colors font-medium", hover)}
                       aria-haspopup="menu"
                       aria-expanded={productsOpen}
                       onClick={(e) => {
@@ -190,7 +190,7 @@ export function Header() {
                                 key={t}
                                 href={`/products?type=${encodeURIComponent(t)}`}
                                 role="menuitem"
-                                className="block rounded-md px-3 py-2 text-sm text-slate-800 whitespace-nowrap hover:bg-slate-50"
+                                className="block cursor-pointer rounded-md px-3 py-2 text-sm text-slate-800 whitespace-nowrap hover:bg-slate-50"
                                 onClick={() => setProductsOpen(false)}
                               >
                                 {t}
@@ -205,7 +205,7 @@ export function Header() {
                           <Link
                             href="/refurbished"
                             role="menuitem"
-                            className="block rounded-md px-3 py-2 text-sm font-semibold text-slate-900 whitespace-nowrap hover:bg-slate-50"
+                            className="block cursor-pointer rounded-md px-3 py-2 text-sm font-semibold text-slate-900 whitespace-nowrap hover:bg-slate-50"
                             onClick={() => setProductsOpen(false)}
                           >
                             Рециклирани
@@ -219,7 +219,7 @@ export function Header() {
 
               if (href !== "/services") {
                 return (
-                  <Link key={href} href={href} className={cn("text-slate-800 transition-colors font-medium", hover)}>
+                  <Link key={href} href={href} className={cn("cursor-pointer text-slate-800 transition-colors font-medium", hover)}>
                     {label}
                   </Link>
                 );
@@ -235,7 +235,7 @@ export function Header() {
                   <Link
                     href="/services"
                     className={cn(
-                      "inline-flex items-center gap-1 text-slate-800 transition-colors font-medium",
+                      "inline-flex cursor-pointer items-center gap-1 text-slate-800 transition-colors font-medium",
                       hover,
                     )}
                     aria-haspopup="menu"
@@ -261,7 +261,7 @@ export function Header() {
                             key={l.href}
                             href={l.href}
                             role="menuitem"
-                            className="block rounded-md px-3 py-2 text-sm text-slate-800 whitespace-nowrap hover:bg-slate-50"
+                            className="block cursor-pointer rounded-md px-3 py-2 text-sm text-slate-800 whitespace-nowrap hover:bg-slate-50"
                             onClick={() => setServicesOpen(false)}
                           >
                             {l.label}
@@ -276,8 +276,8 @@ export function Header() {
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-4">
-            <Link href="/contact" className="hidden md:block">
-              <Button className="hover:cursor-pointer bg-gradient-to-r from-blue-600 to-red-600 hover:from-blue-700 hover:to-red-700 text-white border-0">
+            <Link href="/contact" className="hidden cursor-pointer md:block">
+              <Button className="bg-gradient-to-r from-blue-600 to-red-600 hover:from-blue-700 hover:to-red-700 text-white border-0">
                 Свържете се
               </Button>
             </Link>
@@ -308,7 +308,7 @@ export function Header() {
         <button
           type="button"
           className={cn(
-            "absolute inset-0 bg-black/50 backdrop-blur-[1px] transition-opacity duration-300",
+            "absolute inset-0 cursor-pointer bg-black/50 backdrop-blur-[1px] transition-opacity duration-300",
             mobileOpen ? "opacity-100" : "opacity-0",
           )}
           aria-label="Затвори менюто"
@@ -340,7 +340,7 @@ export function Header() {
             {/* Начало */}
             <Link
               href="/"
-              className="rounded-lg px-4 py-3 text-lg font-medium text-slate-800 transition-colors hover:text-blue-600 active:bg-slate-100"
+              className="cursor-pointer rounded-lg px-4 py-3 text-lg font-medium text-slate-800 transition-colors hover:text-blue-600 active:bg-slate-100"
               onClick={() => setMobileOpen(false)}
             >
               Начало
@@ -351,14 +351,14 @@ export function Header() {
               <div className="flex items-stretch">
                 <Link
                   href="/products"
-                  className="flex-1 px-4 py-3 text-lg font-medium text-slate-800 transition-colors hover:text-blue-600 active:bg-slate-100"
+                  className="flex-1 cursor-pointer px-4 py-3 text-lg font-medium text-slate-800 transition-colors hover:text-blue-600 active:bg-slate-100"
                   onClick={() => setMobileOpen(false)}
                 >
                   Климатици
                 </Link>
                 <button
                   type="button"
-                  className="px-3 py-3 text-slate-700 active:bg-slate-100"
+                  className="cursor-pointer px-3 py-3 text-slate-700 active:bg-slate-100"
                   aria-label="Отвори категории продукти"
                   aria-expanded={mobileProductsOpen}
                   onClick={() => setMobileProductsOpen((o) => !o)}
@@ -379,7 +379,7 @@ export function Header() {
                       <Link
                         key={t}
                         href={`/products?type=${encodeURIComponent(t)}`}
-                        className="block rounded-md px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50 active:bg-slate-100"
+                        className="block cursor-pointer rounded-md px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50 active:bg-slate-100"
                         onClick={() => setMobileOpen(false)}
                       >
                         {t}
@@ -393,7 +393,7 @@ export function Header() {
                   <div className="my-1.5 border-t border-slate-100" />
                   <Link
                     href="/refurbished"
-                    className="block rounded-md px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50 active:bg-slate-100"
+                    className="block cursor-pointer rounded-md px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50 active:bg-slate-100"
                     onClick={() => setMobileOpen(false)}
                   >
                     Рециклирани
@@ -407,14 +407,14 @@ export function Header() {
               <div className="flex items-stretch">
                 <Link
                   href="/services"
-                  className="flex-1 px-4 py-3 text-lg font-medium text-slate-800 transition-colors hover:text-blue-600 active:bg-slate-100"
+                  className="flex-1 cursor-pointer px-4 py-3 text-lg font-medium text-slate-800 transition-colors hover:text-blue-600 active:bg-slate-100"
                   onClick={() => setMobileOpen(false)}
                 >
                   Услуги
                 </Link>
                 <button
                   type="button"
-                  className="px-3 py-3 text-slate-700 active:bg-slate-100"
+                  className="cursor-pointer px-3 py-3 text-slate-700 active:bg-slate-100"
                   aria-label="Отвори подменю услуги"
                   aria-expanded={mobileServicesOpen}
                   onClick={() => setMobileServicesOpen((o) => !o)}
@@ -434,7 +434,7 @@ export function Header() {
                     <Link
                       key={l.href}
                       href={l.href}
-                      className="block rounded-md px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50 active:bg-slate-100"
+                      className="block cursor-pointer rounded-md px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50 active:bg-slate-100"
                       onClick={() => setMobileOpen(false)}
                     >
                       {l.label}
@@ -446,14 +446,14 @@ export function Header() {
 
             <Link
               href="/about"
-              className="rounded-lg px-4 py-3 text-lg font-medium text-slate-800 transition-colors hover:text-red-600 active:bg-slate-100"
+              className="cursor-pointer rounded-lg px-4 py-3 text-lg font-medium text-slate-800 transition-colors hover:text-red-600 active:bg-slate-100"
               onClick={() => setMobileOpen(false)}
             >
               За нас
             </Link>
             <Link
               href="/contact"
-              className="rounded-lg px-4 py-3 text-lg font-medium text-slate-800 transition-colors hover:text-red-600 active:bg-slate-100"
+              className="cursor-pointer rounded-lg px-4 py-3 text-lg font-medium text-slate-800 transition-colors hover:text-red-600 active:bg-slate-100"
               onClick={() => setMobileOpen(false)}
             >
               Контакти
@@ -461,21 +461,21 @@ export function Header() {
           </nav>
 
           <div className="border-t border-slate-100 p-4 space-y-3 bg-slate-50/80">
-            <Link href="/contact" className="block" onClick={() => setMobileOpen(false)}>
+            <Link href="/contact" className="block cursor-pointer" onClick={() => setMobileOpen(false)}>
               <Button className="w-full bg-gradient-to-r from-blue-600 to-red-600 hover:from-blue-700 hover:to-red-700 text-white border-0">
                 Свържете се
               </Button>
             </Link>
             <a
               href="tel:+359876083921"
-              className="flex items-center gap-2 text-sm text-slate-700"
+              className="flex cursor-pointer items-center gap-2 text-sm text-slate-700"
             >
               <Phone size={16} className="text-blue-600 shrink-0" />
               +359 876 083 921
             </a>
             <a
               href="mailto:tetclima3@gmail.com"
-              className="flex items-center gap-2 text-sm text-slate-700 break-all"
+              className="flex cursor-pointer items-center gap-2 text-sm text-slate-700 break-all"
             >
               <Mail size={16} className="text-red-600 shrink-0" />
               tetclima3@gmail.com

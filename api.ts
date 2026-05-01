@@ -187,17 +187,35 @@ function mapStrapiProduct(item: any): Product {
 }
 
 export async function getProducts(): Promise<Product[]> {
-  const res = await fetch(`${STRAPI_URL}/api/products?populate=*`, {
-    cache: "no-store",
-  });
+  const pageSize = 100;
+  let page = 1;
+  const all: any[] = [];
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch products");
+  // Strapi is paginated by default (often pageSize=25). Fetch all pages.
+  for (;;) {
+    const url = new URL(`${STRAPI_URL}/api/products`);
+    url.searchParams.set("populate", "*");
+    url.searchParams.set("pagination[page]", String(page));
+    url.searchParams.set("pagination[pageSize]", String(pageSize));
+
+    const res = await fetch(url.toString(), { cache: "no-store" });
+    if (!res.ok) throw new Error("Failed to fetch products");
+
+    const json = await res.json();
+    const data = Array.isArray(json?.data) ? json.data : [];
+    all.push(...data);
+
+    const meta = json?.meta?.pagination;
+    const pageCount =
+      meta && typeof meta.pageCount === "number" ? meta.pageCount : undefined;
+
+    // If Strapi didn't send pagination meta, assume single page.
+    if (!pageCount) break;
+    if (page >= pageCount) break;
+    page += 1;
   }
 
-  const json = await res.json();
-  const data = json.data || [];
-  return data.map((item: any) => mapStrapiProduct(item));
+  return all.map((item: any) => mapStrapiProduct(item));
 }
 
 export async function getProductById(id: string | number): Promise<Product | null> {

@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import { Checkbox } from "@/app/components/ui/checkbox";
-import { Input } from "@/app/components/ui/input";
+import { PriceRangeSlider } from "@/app/components/PriceRangeSlider";
 import { getProducts, type Product } from "@/api";
 import { formatPriceBgnFromEur, formatPriceEur } from "@/lib/currency";
 import { InquiryModal } from "@/app/components/InquiryModal";
@@ -31,6 +31,7 @@ export default function ProductsClient() {
   const [sortBy, setSortBy] = useState<string>("popular");
   const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
   const [selectedRoomSizes, setSelectedRoomSizes] = useState<string[]>([]);
+  const [selectedBtus, setSelectedBtus] = useState<string[]>([]);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [minPriceEur, setMinPriceEur] = useState<string>("");
@@ -42,6 +43,7 @@ export default function ProductsClient() {
     brand: boolean;
     class: boolean;
     room: boolean;
+    btu: boolean;
     color: boolean;
     price: boolean;
   }>({
@@ -49,8 +51,9 @@ export default function ProductsClient() {
     brand: false,
     class: false,
     room: false,
+    btu: true,
     color: false,
-    price: false,
+    price: true,
   });
 
   const types = ["all", ...Array.from(new Set(products.map((p) => p.type)))];
@@ -61,6 +64,21 @@ export default function ProductsClient() {
   const roomSizes = Array.from(
     new Set(products.map((p) => String((p.specifications as any).room_size ?? "")).filter(Boolean)),
   ).sort((a, b) => a.localeCompare(b, "bg"));
+  const btus = Array.from(
+    new Set(
+      products
+        .map((p) => {
+          const raw =
+            (p.specifications as any).power_btu ??
+            (p.specifications as any).power ??
+            p.capacity ??
+            "";
+          const digits = String(raw).replace(/[^\d]/g, "");
+          return digits ? digits : "";
+        })
+        .filter(Boolean),
+    ),
+  ).sort((a, b) => Number(a) - Number(b));
   const colors = Array.from(
     new Set(products.map((p) => p.specifications.color).filter(Boolean)),
   ).sort((a, b) => a.localeCompare(b, "bg"));
@@ -104,6 +122,11 @@ export default function ProductsClient() {
       prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
     );
   };
+  const toggleBtu = (value: string) => {
+    setSelectedBtus((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
+    );
+  };
   const toggleColor = (value: string) => {
     setSelectedColors((prev) =>
       prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
@@ -117,6 +140,7 @@ export default function ProductsClient() {
   const clearAllFilters = () => {
     setSelectedClasses([]);
     setSelectedRoomSizes([]);
+    setSelectedBtus([]);
     setSelectedColors([]);
     setSelectedBrands([]);
     setSelectedType("all");
@@ -127,6 +151,7 @@ export default function ProductsClient() {
   const hasActiveFilters =
     selectedClasses.length > 0 ||
     selectedRoomSizes.length > 0 ||
+    selectedBtus.length > 0 ||
     selectedColors.length > 0 ||
     selectedBrands.length > 0 ||
     Boolean(minPriceEur) ||
@@ -138,6 +163,13 @@ export default function ProductsClient() {
     if (selectedClasses.length > 0 && !selectedClasses.includes(product.specifications.class)) return false;
     const roomSize = String((product.specifications as any).room_size ?? "");
     if (selectedRoomSizes.length > 0 && !selectedRoomSizes.includes(roomSize)) return false;
+    const btuRaw =
+      (product.specifications as any).power_btu ??
+      (product.specifications as any).power ??
+      product.capacity ??
+      "";
+    const btuDigits = String(btuRaw).replace(/[^\d]/g, "");
+    if (selectedBtus.length > 0 && !selectedBtus.includes(btuDigits)) return false;
     if (selectedColors.length > 0 && !selectedColors.includes(product.specifications.color)) return false;
     const min = minPriceEur ? Number(minPriceEur) : undefined;
     const max = maxPriceEur ? Number(maxPriceEur) : undefined;
@@ -164,6 +196,7 @@ export default function ProductsClient() {
     sortBy,
     selectedClasses,
     selectedRoomSizes,
+    selectedBtus,
     selectedColors,
     selectedBrands,
     minPriceEur,
@@ -212,26 +245,39 @@ export default function ProductsClient() {
             </div>
           ) : (
             <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
-              <aside className="lg:sticky lg:top-24 self-start">
-                <div className="bg-white rounded-lg shadow-sm p-4 lg:p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-lg">Филтри</h3>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={clearAllFilters}
-                      disabled={!hasActiveFilters}
-                      className="text-red-600 border-red-600 hover:bg-red-50 disabled:opacity-40 disabled:pointer-events-none"
-                    >
-                      Изчисти
-                    </Button>
+              <aside className="lg:sticky lg:top-28 self-start h-[calc(100vh-7rem)]">
+                <div className="bg-white rounded-lg shadow-sm overflow-hidden h-full flex flex-col">
+                  <div className="shrink-0 bg-white border-b border-slate-100 p-4 lg:p-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-lg">Филтри</h3>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={clearAllFilters}
+                        disabled={!hasActiveFilters}
+                        className="text-red-600 border-red-600 hover:bg-red-50 disabled:opacity-40 disabled:pointer-events-none"
+                      >
+                        Изчисти
+                      </Button>
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
+                  {(() => {
+                    const listBox = (len: number) =>
+                      len >= 5 ? "max-h-40 overflow-auto pr-1" : "";
+
+                    return (
+                  <div
+                    className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-4 lg:px-6 pb-8"
+                    onWheel={(e) => {
+                      e.stopPropagation();
+                    }}
+                  >
+                    <div className="sticky top-0 z-10 h-4 bg-white" aria-hidden />
                     <div className="rounded-md border border-slate-200">
                       <button
                         type="button"
-                        className="w-full flex items-center justify-between px-3 py-2 text-left"
+                        className="flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left"
                         onClick={() => setOpenSections((s) => ({ ...s, type: !s.type }))}
                       >
                         <span className="text-sm font-medium">Тип</span>
@@ -262,7 +308,41 @@ export default function ProductsClient() {
                     <div className="rounded-md border border-slate-200">
                       <button
                         type="button"
-                        className="w-full flex items-center justify-between px-3 py-2 text-left"
+                        className="flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left"
+                        onClick={() => setOpenSections((s) => ({ ...s, brand: !s.brand }))}
+                      >
+                        <span className="text-sm font-medium">Производител</span>
+                        {openSections.brand ? (
+                          <ChevronUp className="size-4 text-slate-500" />
+                        ) : (
+                          <ChevronDown className="size-4 text-slate-500" />
+                        )}
+                      </button>
+                      {openSections.brand ? (
+                        <div className={["px-3 pb-3 space-y-2", listBox(brands.length)].join(" ")}>
+                          {brands.map((brand) => (
+                            <div key={brand} className="flex items-start gap-2">
+                              <Checkbox
+                                id={`brand-${brand}`}
+                                checked={selectedBrands.includes(brand)}
+                                onCheckedChange={() => toggleBrand(brand)}
+                              />
+                              <label
+                                htmlFor={`brand-${brand}`}
+                                className="text-sm leading-5 cursor-pointer select-none"
+                              >
+                                {brand}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <div className="rounded-md border border-slate-200">
+                      <button
+                        type="button"
+                        className="flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left"
                         onClick={() => setOpenSections((s) => ({ ...s, room: !s.room }))}
                       >
                         <span className="text-sm font-medium">За помещения (кв.м.)</span>
@@ -273,7 +353,7 @@ export default function ProductsClient() {
                         )}
                       </button>
                       {openSections.room ? (
-                        <div className="px-3 pb-3 space-y-2">
+                        <div className={["px-3 pb-3 space-y-2", listBox(roomSizes.length)].join(" ")}>
                           {roomSizes.length ? (
                             roomSizes.map((room) => (
                               <div key={room} className="flex items-start gap-2">
@@ -300,7 +380,45 @@ export default function ProductsClient() {
                     <div className="rounded-md border border-slate-200">
                       <button
                         type="button"
-                        className="w-full flex items-center justify-between px-3 py-2 text-left"
+                        className="flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left"
+                        onClick={() => setOpenSections((s) => ({ ...s, btu: !s.btu }))}
+                      >
+                        <span className="text-sm font-medium">BTU</span>
+                        {openSections.btu ? (
+                          <ChevronUp className="size-4 text-slate-500" />
+                        ) : (
+                          <ChevronDown className="size-4 text-slate-500" />
+                        )}
+                      </button>
+                      {openSections.btu ? (
+                        <div className={["px-3 pb-3 space-y-2", listBox(btus.length)].join(" ")}>
+                          {btus.length ? (
+                            btus.map((btu) => (
+                              <div key={btu} className="flex items-start gap-2">
+                                <Checkbox
+                                  id={`btu-${btu}`}
+                                  checked={selectedBtus.includes(btu)}
+                                  onCheckedChange={() => toggleBtu(btu)}
+                                />
+                                <label
+                                  htmlFor={`btu-${btu}`}
+                                  className="text-sm leading-5 cursor-pointer select-none"
+                                >
+                                  {btu}
+                                </label>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-xs text-slate-500">Няма данни.</p>
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <div className="rounded-md border border-slate-200">
+                      <button
+                        type="button"
+                        className="flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left"
                         onClick={() => setOpenSections((s) => ({ ...s, class: !s.class }))}
                       >
                         <span className="text-sm font-medium">Клас</span>
@@ -311,7 +429,7 @@ export default function ProductsClient() {
                         )}
                       </button>
                       {openSections.class ? (
-                        <div className="px-3 pb-3 space-y-2">
+                        <div className={["px-3 pb-3 space-y-2", listBox(classes.length)].join(" ")}>
                           {classes.length ? (
                             classes.map((c) => (
                               <div key={c} className="flex items-start gap-2">
@@ -338,7 +456,7 @@ export default function ProductsClient() {
                     <div className="rounded-md border border-slate-200">
                       <button
                         type="button"
-                        className="w-full flex items-center justify-between px-3 py-2 text-left"
+                        className="flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left"
                         onClick={() => setOpenSections((s) => ({ ...s, color: !s.color }))}
                       >
                         <span className="text-sm font-medium">Цвят</span>
@@ -349,7 +467,7 @@ export default function ProductsClient() {
                         )}
                       </button>
                       {openSections.color ? (
-                        <div className="px-3 pb-3 space-y-2">
+                        <div className={["px-3 pb-3 space-y-2", listBox(colors.length)].join(" ")}>
                           {colors.length ? (
                             colors.map((color) => (
                               <div key={color} className="flex items-start gap-2">
@@ -376,10 +494,10 @@ export default function ProductsClient() {
                     <div className="rounded-md border border-slate-200">
                       <button
                         type="button"
-                        className="w-full flex items-center justify-between px-3 py-2 text-left"
+                        className="flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left"
                         onClick={() => setOpenSections((s) => ({ ...s, price: !s.price }))}
                       >
-                        <span className="text-sm font-medium">Цена (EUR)</span>
+                        <span className="text-sm font-medium">Цена</span>
                         {openSections.price ? (
                           <ChevronUp className="size-4 text-slate-500" />
                         ) : (
@@ -388,72 +506,21 @@ export default function ProductsClient() {
                       </button>
                       {openSections.price ? (
                         <div className="px-3 pb-3">
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <label className="text-xs text-slate-600">От</label>
-                              <Input
-                                inputMode="decimal"
-                                placeholder={computedMin ? String(computedMin) : "0"}
-                                value={minPriceEur}
-                                onChange={(e) =>
-                                  setMinPriceEur(
-                                    e.target.value.replace(/[^\d.,]/g, "").replace(",", ".")
-                                  )
-                                }
-                              />
-                            </div>
-                            <div>
-                              <label className="text-xs text-slate-600">До</label>
-                              <Input
-                                inputMode="decimal"
-                                placeholder={computedMax ? String(computedMax) : "0"}
-                                value={maxPriceEur}
-                                onChange={(e) =>
-                                  setMaxPriceEur(
-                                    e.target.value.replace(/[^\d.,]/g, "").replace(",", ".")
-                                  )
-                                }
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ) : null}
-                    </div>
-
-                    <div className="rounded-md border border-slate-200">
-                      <button
-                        type="button"
-                        className="w-full flex items-center justify-between px-3 py-2 text-left"
-                        onClick={() => setOpenSections((s) => ({ ...s, brand: !s.brand }))}
-                      >
-                        <span className="text-sm font-medium">Марка</span>
-                        {openSections.brand ? (
-                          <ChevronUp className="size-4 text-slate-500" />
-                        ) : (
-                          <ChevronDown className="size-4 text-slate-500" />
-                        )}
-                      </button>
-                      {openSections.brand ? (
-                        <div className="px-3 pb-3 space-y-2 max-h-64 overflow-auto">
-                          {brands.map((brand) => (
-                            <div key={brand} className="flex items-start gap-2">
-                              <Checkbox
-                                id={`brand-${brand}`}
-                                checked={selectedBrands.includes(brand)}
-                                onCheckedChange={() => toggleBrand(brand)}
-                              />
-                              <label
-                                htmlFor={`brand-${brand}`}
-                                className="text-sm leading-5 cursor-pointer select-none"
-                              >
-                                {brand}
-                              </label>
-                            </div>
-                          ))}
+                          <PriceRangeSlider
+                            idPrefix="client-eur"
+                            minBound={computedMin}
+                            maxBound={computedMax}
+                            minPrice={minPriceEur}
+                            maxPrice={maxPriceEur}
+                            onChangeMin={setMinPriceEur}
+                            onChangeMax={setMaxPriceEur}
+                          />
                         </div>
                       ) : null}
                     </div>
                   </div>
+                    );
+                  })()}
                 </div>
               </aside>
 
@@ -484,14 +551,14 @@ export default function ProductsClient() {
 
                 <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-8">
                   {paginatedProducts.map((product) => (
-                    <Link key={product.id} href={`/product/${product.id}`} className="block">
+                    <Link key={product.id} href={`/product/${product.id}`} className="block cursor-pointer">
                       <Card className="group hover:shadow-xl transition-all h-full cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm hover:border-blue-300">
                         <CardHeader className="p-0">
-                          <div className="relative overflow-hidden">
+                          <div className="relative flex h-48 w-full items-center justify-center overflow-hidden bg-white">
                             <ImageWithFallback
                               src={product.image}
                               alt={product.name}
-                              className="h-48 w-full object-cover"
+                              className="h-full w-full max-h-full max-w-full object-contain"
                             />
                             {product.badge && (
                               <Badge className="absolute top-4 left-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-red-600 border-0 text-white shadow-md">
