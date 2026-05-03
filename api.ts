@@ -1,4 +1,33 @@
-const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL!;
+/** Base URL for Strapi REST (no trailing slash). Must match where Strapi runs (local or hosted). */
+export function getStrapiBaseUrl(): string {
+  const raw = (process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337").trim();
+  return raw.replace(/\/+$/, "");
+}
+
+const STRAPI_URL = getStrapiBaseUrl();
+
+/**
+ * Strapi REST: only products shown on the site (available for sale).
+ * Rows with isAvailable null are treated as available (legacy data before the field existed).
+ */
+function appendProductAvailabilityFilters(sp: URLSearchParams) {
+  sp.set("filters[$or][0][isAvailable][$eq]", "true");
+  sp.set("filters[$or][1][isAvailable][$null]", "true");
+}
+
+/**
+ * URL to load distinct product types for nav/footer: normal (non-refurbished) + available only.
+ */
+export function strapiProductTypesUrl(strapiRoot: string): string {
+  const u = new URL(`${strapiRoot.replace(/\/$/, "")}/api/products`);
+  u.searchParams.set("fields[0]", "type");
+  u.searchParams.set("filters[$and][0][$or][0][isRefurbished][$eq]", "false");
+  u.searchParams.set("filters[$and][0][$or][1][isRefurbished][$null]", "true");
+  u.searchParams.set("filters[$and][1][$or][0][isAvailable][$eq]", "true");
+  u.searchParams.set("filters[$and][1][$or][1][isAvailable][$null]", "true");
+  u.searchParams.set("pagination[pageSize]", "1000");
+  return u.toString();
+}
 
 /** Normalized fields used by filters / legacy UI; plus any keys from Strapi (snake_case, etc.). */
 export type ProductSpecifications = {
@@ -36,6 +65,8 @@ export interface Product {
   specifications: ProductSpecifications;
   description: string;
   isRefurbished?: boolean;
+  /** false = hidden on site; true/undefined = shown (Strapi may omit on old rows). */
+  isAvailable?: boolean;
 }
 
 function valueToText(value: any): string {
@@ -86,7 +117,9 @@ function mapStrapiProduct(item: any): Product {
     | "dimensions"
     | "weight"
   > = {
-    class: str(specsObj.class) || str(attributes.type) || "",
+    // "class" is used by the filters as "Клас" and should not fall back to product type.
+    // If the class is missing in Strapi, keep it empty so it doesn't get mislabeled.
+    class: str(specsObj.class) || "",
     power: str(specsObj.power) || str(specsObj.power_btu) || "",
     color: str(specsObj.color),
     origin: str(specsObj.origin) || str(specsObj.country_of_origin),
@@ -183,6 +216,7 @@ function mapStrapiProduct(item: any): Product {
     specifications,
     description: (attributes.description as string) || "",
     isRefurbished: Boolean(attributes.isRefurbished),
+    isAvailable: attributes.isAvailable !== false,
   };
 }
 
@@ -197,6 +231,7 @@ export async function getProducts(): Promise<Product[]> {
     url.searchParams.set("populate", "*");
     url.searchParams.set("pagination[page]", String(page));
     url.searchParams.set("pagination[pageSize]", String(pageSize));
+    appendProductAvailabilityFilters(url.searchParams);
 
     const res = await fetch(url.toString(), { cache: "no-store" });
     if (!res.ok) throw new Error("Failed to fetch products");
@@ -237,5 +272,11 @@ export async function getProductById(id: string | number): Promise<Product | nul
     return null;
   }
 
-  return mapStrapiProduct(json.data);
+  const row = json.data;
+  const attrs = row.attributes ?? row;
+  if (attrs.isAvailable === false) {
+    return null;
+  }
+
+  return mapStrapiProduct(row);
 }

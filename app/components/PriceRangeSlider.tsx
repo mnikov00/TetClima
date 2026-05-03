@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatPriceEur } from "@/lib/currency";
 import { Input } from "@/app/components/ui/input";
 import { cn } from "@/app/components/ui/utils";
@@ -46,6 +46,19 @@ export function PriceRangeSlider({
   idPrefix = "price",
 }: Props) {
   const [topZ, setTopZ] = useState<"min" | "max">("max");
+  /** Local text while typing so we do not clamp on every keystroke (that broke multi-digit entry). */
+  const [minDraft, setMinDraft] = useState(minPrice);
+  const [maxDraft, setMaxDraft] = useState(maxPrice);
+  const minFocused = useRef(false);
+  const maxFocused = useRef(false);
+
+  useEffect(() => {
+    if (!minFocused.current) setMinDraft(minPrice);
+  }, [minPrice]);
+
+  useEffect(() => {
+    if (!maxFocused.current) setMaxDraft(maxPrice);
+  }, [maxPrice]);
 
   const boundsOk =
     Number.isFinite(minBound) &&
@@ -96,6 +109,58 @@ export function PriceRangeSlider({
   const applyHi = (n: number) => {
     const next = clamp(roundMoney(n), lo, maxBound);
     onChangeMax(next >= maxBound ? "" : String(next));
+  };
+
+  /** High end of range used when committing the min box (parent max, or open = maxBound). */
+  const hiForMinCommit = useMemo(() => {
+    if (maxPrice === "") return maxBound;
+    const x = Number(maxPrice);
+    if (!Number.isFinite(x)) return maxBound;
+    return clamp(x, minBound, maxBound);
+  }, [minBound, maxBound, maxPrice]);
+
+  /** Low end of range used when committing the max box (parent min, or open = minBound). */
+  const loForMaxCommit = useMemo(() => {
+    if (minPrice === "") return minBound;
+    const x = Number(minPrice);
+    if (!Number.isFinite(x)) return minBound;
+    return clamp(x, minBound, maxBound);
+  }, [minBound, maxBound, minPrice]);
+
+  const commitMinFromString = (raw: string) => {
+    const s = sanitizeDecimal(raw).trim();
+    if (s === "" || s === ".") {
+      onChangeMin("");
+      setMinDraft("");
+      return;
+    }
+    const n = Number(s);
+    if (!Number.isFinite(n)) {
+      onChangeMin("");
+      setMinDraft("");
+      return;
+    }
+    const next = clamp(roundMoney(n), minBound, hiForMinCommit);
+    onChangeMin(next <= minBound ? "" : String(next));
+    setMinDraft(next <= minBound ? "" : String(next));
+  };
+
+  const commitMaxFromString = (raw: string) => {
+    const s = sanitizeDecimal(raw).trim();
+    if (s === "" || s === ".") {
+      onChangeMax("");
+      setMaxDraft("");
+      return;
+    }
+    const n = Number(s);
+    if (!Number.isFinite(n)) {
+      onChangeMax("");
+      setMaxDraft("");
+      return;
+    }
+    const next = clamp(roundMoney(n), loForMaxCommit, maxBound);
+    onChangeMax(next >= maxBound ? "" : String(next));
+    setMaxDraft(next >= maxBound ? "" : String(next));
   };
 
   return (
@@ -154,22 +219,21 @@ export function PriceRangeSlider({
             id={`${idPrefix}-in-min`}
             inputMode="decimal"
             placeholder={String(minBound)}
-            value={minPrice}
+            value={minDraft}
+            onFocus={() => {
+              minFocused.current = true;
+            }}
             onChange={(e) => {
               const s = sanitizeDecimal(e.target.value);
-              if (s === "") {
-                onChangeMin("");
-                return;
-              }
-              const n = Number(s);
-              if (!Number.isFinite(n)) return;
-              applyLo(n);
+              setMinDraft(s);
+              if (s === "") onChangeMin("");
             }}
-            onBlur={() => {
-              if (minPrice === "") return;
-              const n = Number(minPrice);
-              if (!Number.isFinite(n)) onChangeMin("");
-              else applyLo(n);
+            onBlur={(e) => {
+              minFocused.current = false;
+              commitMinFromString(e.currentTarget.value);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") (e.target as HTMLInputElement).blur();
             }}
           />
         </div>
@@ -181,22 +245,21 @@ export function PriceRangeSlider({
             id={`${idPrefix}-in-max`}
             inputMode="decimal"
             placeholder={String(maxBound)}
-            value={maxPrice}
+            value={maxDraft}
+            onFocus={() => {
+              maxFocused.current = true;
+            }}
             onChange={(e) => {
               const s = sanitizeDecimal(e.target.value);
-              if (s === "") {
-                onChangeMax("");
-                return;
-              }
-              const n = Number(s);
-              if (!Number.isFinite(n)) return;
-              applyHi(n);
+              setMaxDraft(s);
+              if (s === "") onChangeMax("");
             }}
-            onBlur={() => {
-              if (maxPrice === "") return;
-              const n = Number(maxPrice);
-              if (!Number.isFinite(n)) onChangeMax("");
-              else applyHi(n);
+            onBlur={(e) => {
+              maxFocused.current = false;
+              commitMaxFromString(e.currentTarget.value);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") (e.target as HTMLInputElement).blur();
             }}
           />
         </div>

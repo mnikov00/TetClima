@@ -1011,10 +1011,10 @@ function ProductsPageInner() {
                   <Link
                     key={product.id}
                     href={`/product/${product.id}?from=${encodeURIComponent(returnToAfterProduct)}`}
-                    className="block cursor-pointer"
+                    className="block h-full min-w-0 cursor-pointer"
                   >
-                    <Card className="group hover:shadow-xl transition-all h-full cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm hover:border-blue-300">
-                      <CardHeader className="p-0">
+                    <Card className="group hover:shadow-xl transition-all h-full min-h-0 cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm hover:border-blue-300">
+                      <CardHeader className="shrink-0 p-0">
                         <div className="relative flex h-48 w-full items-center justify-center overflow-hidden bg-white">
                           <ImageWithFallback
                             src={product.image}
@@ -1031,33 +1031,32 @@ function ProductsPageInner() {
                           </Badge>
                         </div>
                       </CardHeader>
-                      <CardContent className="p-6">
-                        <CardTitle className="mb-2 text-foreground">
+                      <CardContent className="flex flex-1 flex-col min-h-0 min-w-0 p-6">
+                        <CardTitle className="mb-2 min-w-0 shrink-0 truncate text-foreground">
                           {product.brand} {product.model}
                         </CardTitle>
-                        {/* <p className="text-sm text-gray-600 mb-2">{product.brand}</p> */}
-                        <div className="mb-4">
-                          <div className="flex items-baseline gap-2 flex-wrap">
+                        <div className="mb-4 shrink-0">
+                          <p className="line-clamp-2 break-words text-left leading-snug">
                             <span className="text-2xl font-bold text-blue-600">
                               {formatPriceEur(product.price)}
                             </span>
-                            <span className="text-slate-400">|</span>
+                            <span className="text-slate-400"> | </span>
                             <span className="text-base font-semibold text-red-600">
                               {formatPriceBgnFromEur(product.price)}
                             </span>
-                          </div>
+                          </p>
                         </div>
-                        <div className="space-y-3 mb-6">
+                        <div className="mb-0 min-h-0 flex-1 space-y-3">
                           <div className="flex items-center gap-2">
-                            <Thermometer size={16} className="text-blue-600" />
+                            <Thermometer size={16} className="shrink-0 text-blue-600" />
                             <span className="text-sm text-foreground">Мощност: {product.capacity}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Zap size={16} className="text-red-600" />
+                            <Zap size={16} className="shrink-0 text-red-600" />
                             <span className="text-sm text-foreground">Клас: {product.efficiency}</span>
                           </div>
                         </div>
-                        <div className="space-y-2">
+                        <div className="mt-auto flex shrink-0 flex-col gap-2 pt-2">
                           <Button className="w-full bg-blue-600 text-white hover:bg-blue-700">Виж детайли</Button>
                           <Button
                             type="button"

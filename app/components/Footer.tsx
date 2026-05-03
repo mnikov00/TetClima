@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Separator } from "./ui/separator";
 import { Facebook, Instagram } from "lucide-react";
+import { strapiProductTypesUrl } from "@/api";
 
 const PHONE_DISPLAY = "+359 876 083 921";
 const PHONE_TEL = "+359876083921";
@@ -18,11 +19,9 @@ async function loadNormalProductTypes(): Promise<string[]> {
   );
 
   try {
-    const res = await fetch(
-      // Only normal products: isRefurbished = false OR null
-      `${strapiUrl}/api/products?fields[0]=type&filters[$or][0][isRefurbished][$eq]=false&filters[$or][1][isRefurbished][$null]=true&pagination[pageSize]=1000`,
-      { cache: "no-store" },
-    );
+    const res = await fetch(strapiProductTypesUrl(strapiUrl), {
+      cache: "no-store",
+    });
     if (!res.ok) return [];
     const json: any = await res.json();
     const data: any[] = Array.isArray(json?.data) ? json.data : [];

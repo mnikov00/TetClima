@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "./ui/button";
 import { Menu, Phone, Mail, Snowflake, Flame, X, ChevronDown } from "lucide-react";
 import { cn } from "./ui/utils";
+import { strapiProductTypesUrl } from "@/api";
 import { usePathname, useRouter } from "next/navigation";
 
 const navLinks = [
@@ -43,12 +44,9 @@ export function Header() {
     // Load types that actually exist in Strapi (unique product.type)
     const loadTypes = async () => {
       try {
-        const res = await fetch(
-          // Only show types for NORMAL products:
-          // isRefurbished is either false or null/empty.
-          `${strapiUrl}/api/products?fields[0]=type&filters[$or][0][isRefurbished][$eq]=false&filters[$or][1][isRefurbished][$null]=true&pagination[pageSize]=1000`,
-          { cache: "no-store" },
-        );
+        const res = await fetch(strapiProductTypesUrl(strapiUrl), {
+          cache: "no-store",
+        });
         if (!res.ok) return;
         const json = await res.json();
         const data = Array.isArray(json?.data) ? json.data : [];
