@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Separator } from "./ui/separator";
 import { Facebook, Instagram } from "lucide-react";
-import { strapiProductTypesUrl } from "@/api";
+import { getStrapiBaseUrl, strapiProductTypesUrl } from "@/api";
 
 const PHONE_DISPLAY = "+359 876 083 921";
 const PHONE_TEL = "+359876083921";
@@ -13,10 +13,7 @@ const FACEBOOK_URL =
 const INSTAGRAM_URL = "https://www.instagram.com/tetclima";
 
 async function loadNormalProductTypes(): Promise<string[]> {
-  const strapiUrl = (process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337").replace(
-    /\/$/,
-    "",
-  );
+  const strapiUrl = getStrapiBaseUrl();
 
   try {
     const res = await fetch(strapiProductTypesUrl(strapiUrl), {

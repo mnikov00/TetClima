@@ -1,10 +1,25 @@
-/** Base URL for Strapi REST (no trailing slash). Must match where Strapi runs (local or hosted). */
+/**
+ * Base URL for Strapi REST (no trailing slash). Value comes only from env — no hardcoded URL here.
+ *
+ * In **TetClima** `.env` or `.env.local` set:
+ *   `NEXT_PUBLIC_STRAPI_URL=<your Strapi origin>` (no trailing slash)
+ * On the server you may also set `STRAPI_URL` as a fallback (not exposed to the browser).
+ *
+ * Restart `next dev` or rebuild after changing env.
+ */
 export function getStrapiBaseUrl(): string {
-  const raw = (process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337").trim();
-  return raw.replace(/\/+$/, "");
+  const raw = (
+    process.env.NEXT_PUBLIC_STRAPI_URL?.trim() ||
+    process.env.STRAPI_URL?.trim() ||
+    ""
+  ).replace(/\/+$/, "");
+  if (!raw) {
+    throw new Error(
+      "Missing NEXT_PUBLIC_STRAPI_URL. Add it to TetClima .env (Strapi base URL, no trailing slash).",
+    );
+  }
+  return raw;
 }
-
-const STRAPI_URL = getStrapiBaseUrl();
 
 /**
  * Strapi REST: only products shown on the site (available for sale).
@@ -149,11 +164,12 @@ function mapStrapiProduct(item: any): Product {
     ...legacySpecs,
   };
 
+  const base = getStrapiBaseUrl();
   const toFullUrl = (url: unknown) =>
     typeof url === "string" && url
       ? url.startsWith("http")
         ? url
-        : `${STRAPI_URL}${url}`
+        : `${base}${url}`
       : "";
 
   // Support Strapi media in multiple shapes:
@@ -227,7 +243,7 @@ export async function getProducts(): Promise<Product[]> {
 
   // Strapi is paginated by default (often pageSize=25). Fetch all pages.
   for (;;) {
-    const url = new URL(`${STRAPI_URL}/api/products`);
+    const url = new URL(`${getStrapiBaseUrl()}/api/products`);
     url.searchParams.set("populate", "*");
     url.searchParams.set("pagination[page]", String(page));
     url.searchParams.set("pagination[pageSize]", String(pageSize));
@@ -259,7 +275,7 @@ export async function getProductById(id: string | number): Promise<Product | nul
     return null;
   }
 
-  const res = await fetch(`${STRAPI_URL}/api/products/${idParam}?populate=*`, {
+  const res = await fetch(`${getStrapiBaseUrl()}/api/products/${idParam}?populate=*`, {
     cache: "no-store",
   });
 

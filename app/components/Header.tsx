@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "./ui/button";
 import { Menu, Phone, Mail, Snowflake, Flame, X, ChevronDown } from "lucide-react";
 import { cn } from "./ui/utils";
-import { strapiProductTypesUrl } from "@/api";
+import { getStrapiBaseUrl, strapiProductTypesUrl } from "@/api";
 import { usePathname, useRouter } from "next/navigation";
 
 const navLinks = [
@@ -35,10 +35,7 @@ export function Header() {
   const [productTypes, setProductTypes] = useState<string[]>([]);
   const closeTimerRef = useRef<number | null>(null);
 
-  const strapiUrl = useMemo(
-    () => (process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337").replace(/\/$/, ""),
-    [],
-  );
+  const strapiUrl = useMemo(() => getStrapiBaseUrl(), []);
 
   useEffect(() => {
     // Load types that actually exist in Strapi (unique product.type)
