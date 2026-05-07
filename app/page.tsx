@@ -3,16 +3,217 @@ import { Button } from "@/app/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
 import { ImageWithFallback } from "@/app/components/ImageWithFallback";
-import { Thermometer, Zap, Shield, Clock, Award, Wrench } from "lucide-react";
+import {
+  Thermometer,
+  Zap,
+  Shield,
+  Clock,
+  Award,
+  Wrench,
+  Leaf,
+} from "lucide-react";
 import { getProducts, type Product } from "@/api";
 import {
   formatPriceBgnFromEur,
   formatPriceEur,
 } from "@/lib/currency";
 
+type FeaturedVariant = "main" | "refurbished";
+
+function FeaturedProductsSection({
+  title,
+  description,
+  products,
+  variant,
+  viewAllHref,
+  viewAllLabel,
+}: {
+  title: string;
+  description: string;
+  products: Product[];
+  variant: FeaturedVariant;
+  viewAllHref: string;
+  viewAllLabel: string;
+}) {
+  const isRefurb = variant === "refurbished";
+
+  const sectionClass = isRefurb
+    ? "py-20 bg-gradient-to-br from-emerald-50/90 via-white to-amber-50/80 border-y border-emerald-100/60"
+    : "py-20 bg-white";
+
+  const cardBorder = isRefurb
+    ? "border border-emerald-200/80 bg-white/95 shadow-sm hover:border-emerald-400 hover:shadow-lg"
+    : "border border-slate-200 bg-white shadow-sm hover:border-blue-300 hover:shadow-xl";
+
+  const pricePrimary = isRefurb ? "text-emerald-700" : "text-blue-600";
+  const priceSecondary = isRefurb ? "text-amber-700" : "text-red-600";
+  const iconCool = isRefurb ? "text-emerald-600" : "text-blue-600";
+  const iconHeat = isRefurb ? "text-amber-600" : "text-red-600";
+  const ctaFull = isRefurb
+    ? "w-full bg-emerald-700 hover:bg-emerald-800 text-white border-0"
+    : "w-full bg-blue-600 hover:bg-blue-700 text-white border-0";
+  const outlineCta = isRefurb
+    ? "text-lg px-8 border-2 border-emerald-700 text-emerald-800 bg-white hover:bg-emerald-50"
+    : "text-lg px-8 border-2 border-blue-600 text-blue-600 bg-white hover:bg-blue-50";
+
+  const badgeGradient = isRefurb
+    ? "from-emerald-600 via-teal-600 to-amber-600"
+    : "from-blue-600 via-indigo-600 to-red-600";
+
+  return (
+    <section className={sectionClass}>
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="text-center mb-12">
+          {isRefurb ? (
+            <>
+              <div className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-100/80 px-4 py-1.5 text-sm font-medium text-emerald-900 mb-4">
+                <Leaf className="size-4 shrink-0" aria-hidden />
+                Устойчив избор
+              </div>
+              <h2 className="text-3xl lg:text-4xl font-bold mb-4 bg-gradient-to-r from-emerald-700 to-amber-700 bg-clip-text text-transparent">
+                {title}
+              </h2>
+              <p className="text-xl text-emerald-950/80 max-w-3xl mx-auto">
+                {description}
+              </p>
+            </>
+          ) : (
+            <>
+              <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">
+                {title}
+              </h2>
+              <p className="text-xl text-slate-700 max-w-3xl mx-auto">
+                {description}
+              </p>
+            </>
+          )}
+        </div>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          {products.map((product) => (
+            <Link
+              key={product.id}
+              href={`/product/${product.id}`}
+              className="block h-full min-h-0 cursor-pointer"
+            >
+              <Card
+                className={`group flex h-full min-h-0 flex-col transition-all cursor-pointer overflow-hidden rounded-xl ${cardBorder}`}
+              >
+                <CardHeader className="shrink-0 p-0">
+                  <div
+                    className={
+                      isRefurb
+                        ? "relative flex h-48 w-full items-center justify-center overflow-hidden bg-gradient-to-b from-emerald-50/50 to-white"
+                        : "relative flex h-48 w-full items-center justify-center overflow-hidden bg-white"
+                    }
+                  >
+                    <ImageWithFallback
+                      src={product.image}
+                      alt={product.name}
+                      className="h-full w-full max-h-full max-w-full object-contain"
+                    />
+                    {product.badge && (
+                      <Badge
+                        className={`absolute top-4 left-4 bg-gradient-to-r ${badgeGradient} border-0 text-white shadow-md max-w-[calc(100%-7.5rem)] truncate`}
+                      >
+                        {product.badge}
+                      </Badge>
+                    )}
+                    <Badge
+                      className={
+                        isRefurb
+                          ? "absolute top-4 right-4 bg-white text-emerald-900 ring-1 ring-emerald-200"
+                          : "absolute top-4 right-4 bg-white text-gray-900"
+                      }
+                    >
+                      {product.type}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="flex min-h-0 flex-1 flex-col p-6">
+                  <CardTitle
+                    className={[
+                      "mb-2 line-clamp-3 min-h-0 overflow-hidden text-balance break-words",
+                      isRefurb ? "text-emerald-950" : "text-slate-900",
+                    ].join(" ")}
+                  >
+                    {product.brand} {product.model}
+                  </CardTitle>
+                  <p
+                    className={
+                      isRefurb
+                        ? "mb-3 line-clamp-2 min-h-0 text-sm text-emerald-900/75"
+                        : "mb-3 line-clamp-2 min-h-0 text-sm text-slate-600"
+                    }
+                  >
+                    {product.name}
+                  </p>
+                  <div className="mb-3 shrink-0">
+                    <div className="flex flex-wrap items-baseline gap-2">
+                      <span className={`text-2xl font-bold ${pricePrimary}`}>
+                        {formatPriceEur(product.price)}
+                      </span>
+                      <span className="text-slate-400">|</span>
+                      <span className={`text-lg font-semibold ${priceSecondary}`}>
+                        {formatPriceBgnFromEur(product.price)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mb-4 min-h-0 shrink-0 space-y-3">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <Thermometer
+                        size={16}
+                        className={`shrink-0 ${iconCool}`}
+                      />
+                      <span
+                        className={
+                          isRefurb
+                            ? "min-w-0 text-sm text-emerald-950/85"
+                            : "min-w-0 text-sm text-slate-700"
+                        }
+                      >
+                        Мощност: {product.capacity}
+                      </span>
+                    </div>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <Zap size={16} className={`shrink-0 ${iconHeat}`} />
+                      <span
+                        className={
+                          isRefurb
+                            ? "min-w-0 text-sm text-emerald-950/85"
+                            : "min-w-0 text-sm text-slate-700"
+                        }
+                      >
+                        Клас: {product.efficiency}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-auto shrink-0 pt-1">
+                    <Button className={ctaFull}>Виж детайли</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+        <div className="text-center">
+          <Link href={viewAllHref} className="cursor-pointer">
+            <Button size="lg" className={outlineCta}>
+              {viewAllLabel}
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default async function Home() {
-  const products: Product[] = await getProducts();
-  const featuredProducts = products.slice(0, 3);
+  const [mainProducts, refurbishedProducts] = await Promise.all([
+    getProducts({ isRefurbished: false }),
+    getProducts({ isRefurbished: true }),
+  ]);
+  const featuredMain = mainProducts.slice(0, 3);
+  const featuredRefurbished = refurbishedProducts.slice(0, 3);
 
   return (
     <div>
@@ -73,84 +274,14 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">
-              Популярни продукти
-            </h2>
-            <p className="text-xl text-slate-700 max-w-3xl mx-auto">
-              Разгледайте нашите най-търсени климатични системи
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {featuredProducts.map((product) => (
-            <Link
-              key={product.id}
-              href={`/product/${product.id}`}
-              className="block cursor-pointer"
-            >
-                <Card className="group hover:shadow-xl transition-all h-full cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm hover:border-blue-300">
-                  <CardHeader className="p-0">
-                    <div className="relative flex h-48 w-full items-center justify-center overflow-hidden bg-white">
-                      <ImageWithFallback
-                        src={product.image}
-                        alt={product.name}
-                        className="h-full w-full max-h-full max-w-full object-contain"
-                      />
-                      {product.badge && (
-                        <Badge className="absolute top-4 left-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-red-600 border-0 text-white shadow-md">
-                          {product.badge}
-                        </Badge>
-                      )}
-                      <Badge className="absolute top-4 right-4 bg-white text-gray-900">
-                        {product.type}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <CardTitle className="mb-2 text-slate-900">
-                      {product.brand} {product.model}
-                    </CardTitle>
-                    <p className="text-sm text-slate-600 mb-2">{product.name}</p>
-                    <div className="mb-4">
-                      <div className="flex items-baseline gap-2 flex-wrap">
-                        <span className="text-2xl font-bold text-blue-600">
-                          {formatPriceEur(product.price)}
-                        </span>
-                        <span className="text-slate-400">|</span>
-                        <span className="text-lg font-semibold text-red-600">
-                          {formatPriceBgnFromEur(product.price)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="space-y-3 mb-6">
-                      <div className="flex items-center gap-2">
-                        <Thermometer size={16} className="text-blue-600" />
-                        <span className="text-sm text-slate-700">Мощност: {product.capacity}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Zap size={16} className="text-red-600" />
-                        <span className="text-sm text-slate-700">Клас: {product.efficiency}</span>
-                      </div>
-                    </div>
-                    <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white border-0">
-                      Виж детайли
-                    </Button>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-          <div className="text-center">
-            <Link href="/products" className="cursor-pointer">
-              <Button size="lg" className="text-lg px-8 border-2 border-blue-600 text-blue-600 bg-white hover:bg-blue-50">
-                Виж всички продукти
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
+      <FeaturedProductsSection
+        title="Популярни продукти"
+        description="Разгледайте нашите най-търсени климатични системи"
+        products={featuredMain}
+        variant="main"
+        viewAllHref="/products"
+        viewAllLabel="Виж всички продукти"
+      />
 
       <section className="py-20 bg-gradient-to-br from-blue-50 to-red-50">
         <div className="max-w-7xl mx-auto px-6">
@@ -190,6 +321,17 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {featuredRefurbished.length > 0 ? (
+        <FeaturedProductsSection
+          title="Рециклирани продукти"
+          description="Проверени климатични системи на достъпна цена с гаранция за качество"
+          products={featuredRefurbished}
+          variant="refurbished"
+          viewAllHref="/refurbished"
+          viewAllLabel="Виж всички продукти"
+        />
+      ) : null}
     </div>
   );
 }

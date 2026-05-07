@@ -30,6 +30,26 @@ function appendProductAvailabilityFilters(sp: URLSearchParams) {
   sp.set("filters[$or][1][isAvailable][$null]", "true");
 }
 
+/** Availability as Strapi filters[$and][slot] combined with other $and rows (refurbished, etc.). */
+function appendProductAvailabilityAndSlot(sp: URLSearchParams, slot: number) {
+  const p = "filters[$and][" + String(slot) + "]";
+  sp.set(p + "[$or][0][isAvailable][$eq]", "true");
+  sp.set(p + "[$or][1][isAvailable][$null]", "true");
+}
+
+function appendMainProductRefurbishedAndSlot(sp: URLSearchParams, slot: number) {
+  const p = "filters[$and][" + String(slot) + "]";
+  sp.set(p + "[$or][0][isRefurbished][$eq]", "false");
+  sp.set(p + "[$or][1][isRefurbished][$null]", "true");
+}
+
+function appendRefurbishedOnlyAndSlot(sp: URLSearchParams, slot: number) {
+  sp.set(
+    "filters[$and][" + String(slot) + "][isRefurbished][$eq]",
+    "true",
+  );
+}
+
 /**
  * URL to load distinct product types for nav/footer: normal (non-refurbished) + available only.
  */
@@ -236,7 +256,18 @@ function mapStrapiProduct(item: any): Product {
   };
 }
 
-export async function getProducts(): Promise<Product[]> {
+export type GetProductsOptions = {
+  /**
+   * Omit: all available products (main + refurbished).
+   * `false`: main catalog only (`isRefurbished` false or unset).
+   * `true`: refurbished only.
+   */
+  isRefurbished?: boolean;
+};
+
+export async function getProducts(
+  options?: GetProductsOptions,
+): Promise<Product[]> {
   const pageSize = 100;
   let page = 1;
   const all: any[] = [];
@@ -247,7 +278,16 @@ export async function getProducts(): Promise<Product[]> {
     url.searchParams.set("populate", "*");
     url.searchParams.set("pagination[page]", String(page));
     url.searchParams.set("pagination[pageSize]", String(pageSize));
-    appendProductAvailabilityFilters(url.searchParams);
+
+    if (options?.isRefurbished === true) {
+      appendProductAvailabilityAndSlot(url.searchParams, 0);
+      appendRefurbishedOnlyAndSlot(url.searchParams, 1);
+    } else if (options?.isRefurbished === false) {
+      appendProductAvailabilityAndSlot(url.searchParams, 0);
+      appendMainProductRefurbishedAndSlot(url.searchParams, 1);
+    } else {
+      appendProductAvailabilityFilters(url.searchParams);
+    }
 
     const res = await fetch(url.toString(), { cache: "no-store" });
     if (!res.ok) throw new Error("Failed to fetch products");

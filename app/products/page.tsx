@@ -15,7 +15,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/ca
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import { ImageWithFallback } from "@/app/components/ImageWithFallback";
-import { Thermometer, Zap, ChevronDown, ChevronUp, Filter, X } from "lucide-react";
+import {
+  Thermometer,
+  Zap,
+  ChevronDown,
+  ChevronUp,
+  Filter,
+  X,
+  ChevronsLeft,
+  ChevronsRight,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -33,6 +44,26 @@ import {
 import { InquiryModal } from "@/app/components/InquiryModal";
 
 const PAGE_SIZE = 12;
+const MAX_VISIBLE_PAGES = 9;
+
+function getVisiblePages(totalPages: number, currentPage: number): number[] {
+  if (totalPages <= MAX_VISIBLE_PAGES) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  const half = Math.floor(MAX_VISIBLE_PAGES / 2);
+  let start = Math.max(1, currentPage - half);
+  let end = start + MAX_VISIBLE_PAGES - 1;
+
+  if (end > totalPages) {
+    end = totalPages;
+    start = end - MAX_VISIBLE_PAGES + 1;
+  }
+
+  const pages: number[] = [];
+  for (let p = start; p <= end; p += 1) pages.push(p);
+  return pages;
+}
 
 function ProductsPageInner() {
   const router = useRouter();
@@ -448,6 +479,18 @@ function ProductsPageInner() {
   const safePage = Math.min(page, totalPages);
   const start = (safePage - 1) * PAGE_SIZE;
   const paginatedProducts = sortedProducts.slice(start, start + PAGE_SIZE);
+  const visiblePages = useMemo(
+    () => getVisiblePages(totalPages, safePage),
+    [totalPages, safePage],
+  );
+
+  const goToPage = (nextPage: number) => {
+    const p = Math.max(1, Math.min(totalPages, nextPage));
+    setPage(p);
+    // URL syncing uses router.replace(..., { scroll: false }) to preserve filter UX,
+    // so we manually scroll on pagination changes.
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  };
 
   const hasAnyFiltersApplied = hasActiveFilters || Boolean(selectedType);
 
@@ -1091,34 +1134,60 @@ function ProductsPageInner() {
                     variant="outline"
                     size="sm"
                     disabled={safePage <= 1}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    onClick={() => goToPage(1)}
+                    aria-label="Първа страница"
+                    title="Първа страница"
                   >
-                    Предишна
+                    <ChevronsLeft className="size-4" />
                   </Button>
-                  {totalPages <= 10 ? (
-                    Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                      <Button
-                        key={p}
-                        variant={p === safePage ? "default" : "outline"}
-                        size="sm"
-                        className={p === safePage ? "bg-blue-600" : ""}
-                        onClick={() => setPage(p)}
-                      >
-                        {p}
-                      </Button>
-                    ))
-                  ) : (
-                    <span className="text-sm text-slate-600 px-2">
-                      Страница {safePage} от {totalPages}
-                    </span>
-                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={safePage <= 1}
+                    onClick={() => goToPage(safePage - 1)}
+                    aria-label="Предишна страница"
+                    title="Предишна страница"
+                  >
+                    <ChevronLeft className="size-4 sm:hidden" />
+                    <span className="hidden sm:inline">Предишна</span>
+                  </Button>
+                  {visiblePages[0] > 1 ? (
+                    <span className="px-1 text-sm text-slate-500">…</span>
+                  ) : null}
+                  {visiblePages.map((p) => (
+                    <Button
+                      key={p}
+                      variant={p === safePage ? "default" : "outline"}
+                      size="sm"
+                      className={p === safePage ? "bg-blue-600" : ""}
+                      onClick={() => goToPage(p)}
+                    >
+                      {p}
+                    </Button>
+                  ))}
+                  {visiblePages[visiblePages.length - 1] < totalPages ? (
+                    <span className="px-1 text-sm text-slate-500">…</span>
+                  ) : null}
                   <Button
                     variant="outline"
                     size="sm"
                     disabled={safePage >= totalPages}
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    onClick={() => goToPage(safePage + 1)}
+                    aria-label="Следваща страница"
+                    title="Следваща страница"
                   >
-                    Следваща
+                    <ChevronRight className="size-4 sm:hidden" />
+                    <span className="hidden sm:inline">Следваща</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={safePage >= totalPages}
+                    onClick={() => goToPage(totalPages)}
+                    aria-label="Последна страница"
+                    title="Последна страница"
+                  >
+                    <ChevronsRight className="size-4" />
                   </Button>
                 </div>
               ) : null}
